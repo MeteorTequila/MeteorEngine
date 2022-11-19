@@ -299,6 +299,11 @@
 		},
 		{
 			"backtrace" : 1,
+			"path" : "include/ModelGenerator.hpp",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 1,
 			"path" : "include/NumericalMethods.hpp",
 			"sourceGroupIndex" : 1
 		},
@@ -335,11 +340,6 @@
 		{
 			"backtrace" : 1,
 			"path" : "include/Shader.hpp",
-			"sourceGroupIndex" : 1
-		},
-		{
-			"backtrace" : 1,
-			"path" : "include/TestGenerator.hpp",
 			"sourceGroupIndex" : 1
 		},
 		{
