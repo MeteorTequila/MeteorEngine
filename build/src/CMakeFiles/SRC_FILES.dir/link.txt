@@ -1,2 +1,0 @@
-/usr/bin/ar qc libSRC_FILES.a CMakeFiles/SRC_FILES.dir/Mesh.cpp.o CMakeFiles/SRC_FILES.dir/Renderer.cpp.o CMakeFiles/SRC_FILES.dir/Scene.cpp.o CMakeFiles/SRC_FILES.dir/Triangle.cpp.o
-/usr/bin/ranlib libSRC_FILES.a
