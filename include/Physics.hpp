@@ -14,15 +14,25 @@ namespace Physics
     namespace MathMethods
     {
         // return a^2
-        inline float pow2(float a)
+        inline float Pow2(float a)
         {
             return a * a;
         }
 
         // return a^5
-        inline float pow5(float a)
+        inline float Pow5(float a)
         {
             return a * a * a * a * a;
+        }
+
+        // return Positive eigenfunction
+        inline int IsPositve(float a)
+        {
+            if (a > 0)
+            {
+                return 1;
+            }
+            return 0;
         }
 
         /**
@@ -117,16 +127,16 @@ namespace Physics
             // float eta_t = IOR;
 
             float costheta_i = -wi.dot(N);
-            float sintheta_i = std::sqrt(1 - MathMethods::pow2(costheta_i));
+            float sintheta_i = std::sqrt(1 - MathMethods::Pow2(costheta_i));
 
             float sintheta_t = eta_i * sintheta_i / eta_t;
-            float costheta_t = std::sqrt(1 - MathMethods::pow2(sintheta_t));
+            float costheta_t = std::sqrt(1 - MathMethods::Pow2(sintheta_t));
 
             float r_parallel, r_vertical;
             r_parallel = (eta_t * costheta_i - eta_i * costheta_t) / (eta_t * costheta_i + eta_i * costheta_t);
             r_vertical = (eta_i * costheta_i - eta_t * costheta_t) / (eta_i * costheta_i + eta_t * costheta_t);
 
-            float F_r = 0.5f * (MathMethods::pow2(r_parallel) + MathMethods::pow2(r_vertical));
+            float F_r = 0.5f * (MathMethods::Pow2(r_parallel) + MathMethods::Pow2(r_vertical));
 
             return F_r;
         }
@@ -157,7 +167,7 @@ namespace Physics
             {
                 // 使用了snell折射定律，eta1*sin(theta_1)=eta2*sin(theta_2)
 
-                float cos_2_t = 1 - MathMethods::pow2(eta_i) * (1 - MathMethods::pow2(costheta)) / MathMethods::pow2(eta_t);
+                float cos_2_t = 1 - MathMethods::Pow2(eta_i) * (1 - MathMethods::Pow2(costheta)) / MathMethods::Pow2(eta_t);
                 costheta = std::sqrt(cos_2_t); // 需要使用折射角
             }
 
@@ -178,7 +188,7 @@ namespace Physics
                 F0 = ((eta_t - eta_i) / (eta_t + eta_i)) * ((eta_t - eta_i) / (eta_t + eta_i));
             }
 
-            float rslt = F0 + (1 - F0) * MathMethods::pow5(1 - costheta);
+            float rslt = F0 + (1 - F0) * MathMethods::Pow5(1 - costheta);
 
             return rslt;
         }

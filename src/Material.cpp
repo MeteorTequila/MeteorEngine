@@ -133,21 +133,31 @@ Vector3f Material::GetRandomReflect(const Vector3f &wi, const Vector3f &N)
     }
 }
 
-// TODO 法线分布函数
-// Blinn-Phong
-// Beckmann
-// Generalized-Trowbridge-Reitz，GTR，又称GGX分布
-float Material::DistributionOfNormal(const Vector3f &wi, const Vector3f &N, const Vector3f toEye)
+/**
+ * @brief 法线分布项
+ * Blinn-Phong分布
+ * Beckmann分布
+ * GGX分布，即Trowbridge-Reitz分布
+ * GTR分布，即Generalized-Trowbridge-Reitz
+ * 各项异性事项，https://zhuanlan.zhihu.com/p/69380665
+ * @param N 表面法线
+ * @param h 光源方向与人眼方向的半程向量
+ * @return float
+ */
+float Material::DistributionOfNormal(const Vector3f &N, const Vector3f &h)
 {
-    int flag_normal = 0;
-    Vector3f h = (-wi + toEye).normalized();
+    int flag_normal = 2; //默认设置为2，主流使用GGX
 
     float n_dot_h_2 = N.dot(h) * N.dot(h);
 
-    // Blinn-Phong分布
+    // Blinn-Phong分布(UE4方法)
     if (flag_normal == 0)
     {
-        float alpha_2 = blinn_alpha * blinn_alpha;
+        // Blinn-Phong
+        // return std::pow((N.dot(h)), alpha_phong) * (alpha_phong + 2) / M_PI / 2;
+
+        // UE4使用alpha_phong=2*alpha_UE^(-2)-2
+        float alpha_2 = alpha_phong * alpha_phong;
         float alpha_p = 2 / alpha_2 - 2;
         return std::pow((N.dot(h)), alpha_p) / M_PI / alpha_2;
     }
@@ -155,16 +165,26 @@ float Material::DistributionOfNormal(const Vector3f &wi, const Vector3f &N, cons
     // Beckmann分布
     if (flag_normal == 1)
     {
-        float alpha_2 = blinn_alpha * blinn_alpha;
+        // alpha_phong=2*alpha_beckmann^(-2)-2，alpha_beckmann介于[0.025,0.2]
+        float alpha_2 = alpha_phong * alpha_phong;
         float e_pow = (n_dot_h_2 - 1) / alpha_2 / n_dot_h_2;
         return std::exp(e_pow) / M_PI / alpha_2 / n_dot_h_2 / n_dot_h_2;
     }
 
-    // GGX分布
+    // GGX分布，即Trowbridge-Reitz分布
     if (flag_normal == 2)
     {
         float roughness_2 = roughness * roughness;
-        return roughness_2 / M_PI / Physics::MathMethods::pow2(n_dot_h_2 * (roughness_2 - 1) + 1);
+        return roughness_2 / M_PI / Physics::MathMethods::Pow2(n_dot_h_2 * (roughness_2 - 1) + 1);
+    }
+    // GTR分布，即Generalized-Trowbridge-Reitz
+    if (flag_normal == 3)
+    {
+        // 控制高光尾部效果。gamma=1时，GTR即Berry分布，gamma=2时，GTR即GGX（Trowbridge-Reitz）分布
+        float gamma = 2;
+        float roughness_2 = roughness * roughness;
+        float pow_base = n_dot_h_2 * (roughness_2 - 1) + 1;
+        return roughness_2 / M_PI / std::pow(pow_base, gamma);
     }
 
     return 0;
@@ -173,44 +193,86 @@ float Material::DistributionOfNormal(const Vector3f &wi, const Vector3f &N, cons
 // TODO 几何函数 描述的是微平面自身阴影的属性
 // 从统计学上对应的是微平面间相互遮蔽的比率，这一项与表面的粗糙度以及法线有关
 // Smith masking function Smith遮蔽函数
-float Material::GeometryShadow(const Vector3f &wi, const Vector3f &N, const Vector3f toEye)
+// Shadowing-Masking Function
+// 返回范围在[0,1]
+float Material::GeometryShadow(const Vector3f &l, const Vector3f &N, const Vector3f &v)
 {
-    Vector3f h = (-wi + toEye).normalized();
-    float n_dot_h_2 = N.dot(h) * N.dot(h);
-    float roughness_2 = roughness * roughness;
 
-    int flag_geo = 0;
+    float G_1 = 0, G_2 = 0;
+    float roughness_2 = roughness * roughness;
+    float n_dot_l = N.dot(l);
+    float n_dot_v = N.dot(v);
+
+    int flag_geo_1 = 0; // 主流使用Smith
+    int flag_geo_2 = 0; // 主流使用Smith
     // Smith [1967]
-    if (flag_geo == 0)
+    if (flag_geo_1 == 0)
     {
+        G_1 = Physics::MathMethods::IsPositve(n_dot_v);
     }
     // Beckmann公式
-    if (flag_geo == 1)
+    if (flag_geo_1 == 1)
     {
-        float c = N.dot(toEye) / roughness_2 / std::sqrt(1 - n_dot_h_2);
-        if (c < 1.6f)
-        {
-            return (3.535 * c + 2.181 * c * c) / (1 + 2.276 * c + 2.577 * c * c);
-        }
-        return 1;
     }
     // Schlick-Beckmann，Schlick-GGX公式(最主流)
-    if (flag_geo == 2)
+    if (flag_geo_1 == 2)
     {
-        float k_schlick_Beckmann = roughness_2 * std::sqrt(2 / M_PI);
-        float k_schlick_GGX = roughness_2 / 2;
-
-        return N.dot(toEye) / (N.dot(toEye) * (1 - k_schlick_GGX) + k_schlick_GGX);
     }
 
-    // GGX公式
-    if (flag_geo == 3)
+    // GGX公式（Disney方法）
+    if (flag_geo_1 == 3)
     {
-
+        float alpha_GGX = (0.5 + roughness / 2) * (0.5 + roughness / 2);
+        float alpha_GGX_2 = alpha_GGX * alpha_GGX;
+        float frac_below = n_dot_v + std::sqrt(alpha_GGX_2 + (1 - alpha_GGX_2) * n_dot_v * n_dot_v);
+        G_1 = 2 * n_dot_v / frac_below;
     }
-    return 0;
+
+    // UE4的GGX-Smith Correlated Joint 近似方案
+    if (flag_geo_2 == 0)
+    {
+        float lambda_v = n_dot_l * (n_dot_v * (1 - roughness_2) + roughness_2);
+        float lambda_l = n_dot_v * (n_dot_l * (1 - roughness_2) + roughness_2);
+        G_2 = 0.5 / (lambda_v + lambda_l);
+    }
+    // Unity HDRP 的GGX-Smith Correlated Joint近似方案
+    if (flag_geo_2 == 1)
+    {
+        float roughness_2 = roughness * roughness;
+        float lambda_v = n_dot_l * (n_dot_v * (1 - roughness) + roughness);
+        float sqrt_base = (-n_dot_l * roughness_2 + n_dot_l) * n_dot_l + roughness_2;
+        float lambda_l = n_dot_v * std::sqrt(sqrt_base);
+        G_2 = 0.5 / (lambda_v + lambda_l);
+    }
+
+    // Google Filament渲染器 的GGX-Smith Joint近似方案
+    if (flag_geo_2 == 2)
+    {
+        float roughness_2 = roughness * roughness;
+        float sqrt_base_l = (-n_dot_l * roughness_2 + n_dot_l) * n_dot_l + roughness_2;
+        float lambda_l = n_dot_v * std::sqrt(sqrt_base_l);
+        float sqrt_base_v = (-n_dot_v * roughness_2 + n_dot_v) * n_dot_v + roughness_2;
+        float lambda_v = n_dot_l * std::sqrt(sqrt_base_v);
+        G_2 = 0.5 / (lambda_v + lambda_l);
+    }
+
+    // [2017]Respawn Entertainment的 GGX-Smith Joint近似方案
+    if (flag_geo_2 == 3)
+    {
+        float roughness_2 = roughness * roughness;
+        float sqrt_base_l = (-n_dot_l * roughness_2 + n_dot_l) * n_dot_l + roughness_2;
+        float lambda_l = n_dot_v * std::sqrt(sqrt_base_l);
+        float sqrt_base_v = (-n_dot_v * roughness_2 + n_dot_v) * n_dot_v + roughness_2;
+        float lambda_v = n_dot_l * std::sqrt(sqrt_base_v);
+        G_2 = 0.5 / (lambda_v + lambda_l);
+    }
+    return G_1 + G_2;
 }
 
+float FCookTorrance(const Vector3f &wi, const Vector3f &N, const Vector3f &v)
+{
+    Vector3f h = (-wi + v).normalized();
+}
 /**
  * @brief lambert光照模型
  *
@@ -266,10 +328,10 @@ std::vector<Vector3f> Material::Phong(const Vector3f &wi, const Vector3f &N)
  *
  * @param wi 光线->交点
  * @param N 表面法线方向
- * @param eyedir 眼睛->交点
+ * @param v 交点->眼睛
  * @return std::vector<Vector3f> 返回漫反射颜色+镜面反射数组
  */
-std::vector<Vector3f> Material::BlingPhong(const Vector3f &wi, const Vector3f &N, const Vector3f &eyedir)
+std::vector<Vector3f> Material::BlingPhong(const Vector3f &wi, const Vector3f &N, const Vector3f &v)
 {
     // 漫反射
     float costheta_i = -wi.dot(N);
@@ -280,7 +342,7 @@ std::vector<Vector3f> Material::BlingPhong(const Vector3f &wi, const Vector3f &N
     Vector3f diffuse = costheta_i * kd;
 
     // 镜面反射
-    Vector3f halfVec = (-eyedir + wi).normalized();
+    Vector3f halfVec = (-wi + v).normalized();
     float costheta_h = N.dot(halfVec);
     if (costheta_h < EPSILON)
     {

@@ -51,7 +51,7 @@ public:
   Vector3f emission; //材质自发光
 
   // 微表面属性
-  float blinn_alpha; //光泽度
+  float alpha_phong; //光泽度
   float roughness;
 
   Material();
@@ -62,11 +62,13 @@ public:
   Vector3f GetRandomReflect(const Vector3f &wi, const Vector3f &N);
 
   // Micorfacet 方法
-  float DistributionOfNormal(const Vector3f &wi, const Vector3f &N, const Vector3f toEye);
-  float GeometryShadow(const Vector3f &wi, const Vector3f &N, const Vector3f toEye);
+  float DistributionOfNormal(const Vector3f &N, const Vector3f &h);
+  float GeometryShadow(const Vector3f &l, const Vector3f &N, const Vector3f &v);
+
+  float FCookTorrance(const Vector3f &wi, const Vector3f &N, const Vector3f &v);
   float Lambert(const Vector3f &wi, const Vector3f &N);
   std::vector<Vector3f> Phong(const Vector3f &wi, const Vector3f &N);
-  std::vector<Vector3f> BlingPhong(const Vector3f &wi, const Vector3f &N, const Vector3f &eyedir);
+  std::vector<Vector3f> BlingPhong(const Vector3f &wi, const Vector3f &N, const Vector3f &v);
   float GetBrdfSample(const Vector3f &wi, const Vector3f &N, const Vector3f &wo);
   float GetBrdfSample_2();
   Vector3f EnergyEval(const Vector3f &wi, const Vector3f &N, const Vector3f &wo);
