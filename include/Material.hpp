@@ -51,8 +51,12 @@ public:
   Vector3f emission; //材质自发光
 
   // 微表面属性
-  float alpha_phong; //光泽度
-  float roughness;
+  Vector3f baseColor; //固有色
+  bool subsurface;    //次表面
+  float metallic;     //金属度
+  float alpha_phong;  //光泽度
+  float roughness;    //粗糙度
+  float anisotropic;  //各向异性程度。用于控制镜面反射高光的纵横比
 
   Material();
   Material(MaterialType _mt);

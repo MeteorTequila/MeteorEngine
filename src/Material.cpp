@@ -135,11 +135,7 @@ Vector3f Material::GetRandomReflect(const Vector3f &wi, const Vector3f &N)
 
 /**
  * @brief 法线分布项
- * Blinn-Phong分布
- * Beckmann分布
- * GGX分布，即Trowbridge-Reitz分布
- * GTR分布，即Generalized-Trowbridge-Reitz
- * 各项异性事项，https://zhuanlan.zhihu.com/p/69380665
+ * https://zhuanlan.zhihu.com/p/69380665
  * @param N 表面法线
  * @param h 光源方向与人眼方向的半程向量
  * @return float
@@ -190,11 +186,18 @@ float Material::DistributionOfNormal(const Vector3f &N, const Vector3f &h)
     return 0;
 }
 
-// TODO 几何函数 描述的是微平面自身阴影的属性
-// 从统计学上对应的是微平面间相互遮蔽的比率，这一项与表面的粗糙度以及法线有关
-// Smith masking function Smith遮蔽函数
-// Shadowing-Masking Function
-// 返回范围在[0,1]
+
+/**
+ * @brief 几何函数
+ * https://zhuanlan.zhihu.com/p/81708753
+ * 几何函数（Geometry Function）是一个0到1之间的标量，描述了微平面自阴影的属性，
+ * 表示了具有半矢量法线的微平面（microfacet）中，同时被入射方向和反射方向可见（没有被遮挡的）的比例，
+ * gi t即未被遮挡的m= h微表面的百分比。
+ * @param l 交点->光源
+ * @param N 法线
+ * @param v 交点->眼睛
+ * @return float 
+ */
 float Material::GeometryShadow(const Vector3f &l, const Vector3f &N, const Vector3f &v)
 {
 
