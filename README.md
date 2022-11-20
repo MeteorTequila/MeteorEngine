@@ -7,4 +7,4 @@
 ## * 包含简单的ppm图片导出功能
 - - -
 ## .obj文件都来自以下网站
-〈https://threedscans.com/〉
+〈 https://threedscans.com/ 〉
