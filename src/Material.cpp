@@ -1,6 +1,7 @@
 #include "Material.hpp"
 #include "Intersection.hpp"
 #include "Physics.hpp"
+#include "Shader.hpp"
 #include "global.hpp"
 #include <cmath>
 
@@ -134,7 +135,6 @@ Vector3f Material::GetRandomReflect(const Vector3f &wi, const Vector3f &N)
 
 /**
  * @brief 法线分布项
- * https://zhuanlan.zhihu.com/p/69380665
  * @param N 表面法线
  * @param h 光源方向与人眼方向的半程向量
  * @return float
@@ -173,10 +173,6 @@ float Material::DistributionOfNormal(const Vector3f &N, const Vector3f &h)
 
 /**
  * @brief 几何函数
- * https://zhuanlan.zhihu.com/p/81708753
- * 几何函数（Geometry Function）是一个0到1之间的标量，描述了微平面自阴影的属性，
- * 表示了具有半矢量法线的微平面（microfacet）中，同时被入射方向和反射方向可见（没有被遮挡的）的比例，
- * gi t即未被遮挡的m= h微表面的百分比。
  * @param l 交点->光源
  * @param N 法线
  * @param v 交点->眼睛
@@ -184,76 +180,46 @@ float Material::DistributionOfNormal(const Vector3f &N, const Vector3f &h)
  */
 float Material::GeometryShadow(const Vector3f &l, const Vector3f &N, const Vector3f &v)
 {
-
-    float G_1 = 0, G_2 = 0;
-    float roughness_2 = roughness * roughness;
     float n_dot_l = N.dot(l);
     float n_dot_v = N.dot(v);
 
-    int flag_geo_1 = 0; // 主流使用Smith
-    int flag_geo_2 = 0; // 主流使用Smith
+    int flag_geo = 2; // 默认为2
+
     // Smith [1967]
-    if (flag_geo_1 == 0)
+    if (flag_geo == 0)
     {
-        G_1 = Physics::MathMethods::IsPositve(n_dot_v);
-    }
-    // Beckmann公式
-    if (flag_geo_1 == 1)
-    {
-    }
-    // Schlick-Beckmann，Schlick-GGX公式(最主流)
-    if (flag_geo_1 == 2)
-    {
+        return G_Smith(n_dot_v);
     }
 
     // GGX公式（Disney方法）
-    if (flag_geo_1 == 3)
+    if (flag_geo == 1)
     {
-        float alpha_GGX = (0.5 + roughness / 2) * (0.5 + roughness / 2); //粗糙度重映射
-        float alpha_GGX_2 = alpha_GGX * alpha_GGX;
-        float frac_below = n_dot_v + std::sqrt(alpha_GGX_2 + (1 - alpha_GGX_2) * n_dot_v * n_dot_v);
-        G_1 = 2 * n_dot_v / frac_below;
+        return G_Smith_Disney(n_dot_v, n_dot_l, roughness);
     }
 
     // UE4的GGX-Smith Correlated Joint 近似方案
-    if (flag_geo_2 == 0)
+    if (flag_geo == 2)
     {
-        float lambda_v = n_dot_l * (n_dot_v * (1 - roughness_2) + roughness_2);
-        float lambda_l = n_dot_v * (n_dot_l * (1 - roughness_2) + roughness_2);
-        G_2 = 0.5 / (lambda_v + lambda_l);
+        return G_Smith_UE4(n_dot_v, n_dot_l, roughness);
     }
     // Unity HDRP 的GGX-Smith Correlated Joint近似方案
-    if (flag_geo_2 == 1)
+    if (flag_geo == 3)
     {
-        float roughness_2 = roughness * roughness;
-        float lambda_v = n_dot_l * (n_dot_v * (1 - roughness) + roughness);
-        float sqrt_base = (-n_dot_l * roughness_2 + n_dot_l) * n_dot_l + roughness_2;
-        float lambda_l = n_dot_v * std::sqrt(sqrt_base);
-        G_2 = 0.5 / (lambda_v + lambda_l);
+        return G_Smith_Unity(n_dot_v, n_dot_l, roughness);
     }
 
     // Google Filament渲染器 的GGX-Smith Joint近似方案
-    if (flag_geo_2 == 2)
+    if (flag_geo == 4)
     {
-        float roughness_2 = roughness * roughness;
-        float sqrt_base_l = (-n_dot_l * roughness_2 + n_dot_l) * n_dot_l + roughness_2;
-        float lambda_l = n_dot_v * std::sqrt(sqrt_base_l);
-        float sqrt_base_v = (-n_dot_v * roughness_2 + n_dot_v) * n_dot_v + roughness_2;
-        float lambda_v = n_dot_l * std::sqrt(sqrt_base_v);
-        G_2 = 0.5 / (lambda_v + lambda_l);
+        return G_Smith_Google(n_dot_v, n_dot_l, roughness);
     }
 
     // [2017]Respawn Entertainment的 GGX-Smith Joint近似方案
-    if (flag_geo_2 == 3)
+    if (flag_geo == 5)
     {
-        float roughness_2 = roughness * roughness;
-        float sqrt_base_l = (-n_dot_l * roughness_2 + n_dot_l) * n_dot_l + roughness_2;
-        float lambda_l = n_dot_v * std::sqrt(sqrt_base_l);
-        float sqrt_base_v = (-n_dot_v * roughness_2 + n_dot_v) * n_dot_v + roughness_2;
-        float lambda_v = n_dot_l * std::sqrt(sqrt_base_v);
-        G_2 = 0.5 / (lambda_v + lambda_l);
+        return G_Smith_Respawn(n_dot_v, n_dot_l, roughness);
     }
-    return G_1 + G_2;
+    return 0.f;
 }
 
 float FCookTorrance(const Vector3f &wi, const Vector3f &N, const Vector3f &v)
