@@ -8,7 +8,9 @@
 #include "Shader.hpp"
 
 using namespace Eigen;
-using namespace MaterialShader;
+using namespace Shader;
+using namespace Shader::GeometryShader;
+using namespace Shader::NormalDistributionShader;
 
 enum MaterialType
 {

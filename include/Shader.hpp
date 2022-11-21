@@ -6,7 +6,7 @@
 
 using namespace Eigen;
 
-namespace MaterialShader
+namespace Shader
 {
     namespace MaterialPdf
     {
@@ -16,6 +16,64 @@ namespace MaterialShader
     }
 
     namespace MaterialColor
+    {
+
+    }
+
+    // 法线分布函数
+    namespace NormalDistributionShader
+    {
+
+        // Phong 法线分布函数
+        inline float ND_Phong(const float &alpha, const float &NdotH)
+        {
+            return std::pow(alpha, alpha) * (alpha + 2) / M_PI / 2;
+        }
+
+        // Phong 法线分布函数（UE4方法）
+        inline float ND_Phong_UE4(const float &alpha, const float &NdotH)
+        {
+            // UE4使用alpha_phong=2*alpha_UE^(-2)-2
+            float alpha_2 = alpha * alpha;
+            float alpha_p = 2 / alpha_2 - 2;
+            return std::pow(NdotH, alpha_p) / M_PI / alpha_2;
+        }
+
+        // Beckmann 法线分布函数
+        inline float ND_Beckmann(const float &alpha, const float &NdotH)
+        {
+            // alpha_phong = 2 * alpha_beckmann^(-2) - 2，alpha_beckmann介于[0.025,0.2]
+            float alpha_2 = alpha * alpha;
+            float NdotH_2 = NdotH * NdotH;
+            float e_pow = (NdotH_2 - 1) / alpha_2 / NdotH_2;
+            return std::exp(e_pow) / M_PI / alpha_2 / NdotH_2 / NdotH_2;
+        }
+
+        // GGX法线分布函数，即Trowbridge-Reitz分布
+        inline float ND_GGX(const float &alpha, const float &NdotH)
+        {
+            float roughness_2 = alpha * alpha;
+            float NdotH_2 = NdotH * NdotH;
+            float pow2_base = NdotH_2 * (roughness_2 - 1) + 1;
+            return roughness_2 / M_PI / pow2_base / pow2_base;
+        }
+
+        // GTR法线分布函数，即Generalized-Trowbridge-Reitz
+        inline float ND_GTR(const float &alpha, const float &NdotH, const int gamma)
+        {
+            // gamma控制高光尾部效果
+            // gamma=1时，GTR即Berry分布
+            // gamma=2时，GTR即GGX（Trowbridge-Reitz）分布
+            float roughness_2 = alpha * alpha;
+            float NdotH_2 = NdotH * NdotH;
+            float pow_base = NdotH_2 * (roughness_2 - 1) + 1;
+            return roughness_2 / M_PI / std::pow(pow_base, gamma);
+        }
+
+    }
+
+    // 几何分布函数
+    namespace GeometryShader
     {
 
     }

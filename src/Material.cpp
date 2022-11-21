@@ -1,7 +1,6 @@
 #include "Material.hpp"
 #include "Intersection.hpp"
 #include "Physics.hpp"
-#include "eigen-3.4.0/Eigen/src/Core/Matrix.h"
 #include "global.hpp"
 #include <cmath>
 
@@ -142,50 +141,35 @@ Vector3f Material::GetRandomReflect(const Vector3f &wi, const Vector3f &N)
  */
 float Material::DistributionOfNormal(const Vector3f &N, const Vector3f &h)
 {
-    int flag_normal = 2; //默认设置为2，主流使用GGX
-
-    float n_dot_h_2 = N.dot(h) * N.dot(h);
+    int flag_normal = 2;      //默认设置为2，主流使用GGX
+    float n_dot_h = N.dot(h); // N代表宏观层面的法向量，h半程向量用于表示微观层面的法向量
 
     // Blinn-Phong分布(UE4方法)
     if (flag_normal == 0)
     {
-        // Blinn-Phong
-        // return std::pow((N.dot(h)), alpha_phong) * (alpha_phong + 2) / M_PI / 2;
-
-        // UE4使用alpha_phong=2*alpha_UE^(-2)-2
-        float alpha_2 = alpha_phong * alpha_phong;
-        float alpha_p = 2 / alpha_2 - 2;
-        return std::pow((N.dot(h)), alpha_p) / M_PI / alpha_2;
+        return ND_Phong_UE4(alpha_phong, n_dot_h);
     }
 
     // Beckmann分布
     if (flag_normal == 1)
     {
-        // alpha_phong=2*alpha_beckmann^(-2)-2，alpha_beckmann介于[0.025,0.2]
-        float alpha_2 = alpha_phong * alpha_phong;
-        float e_pow = (n_dot_h_2 - 1) / alpha_2 / n_dot_h_2;
-        return std::exp(e_pow) / M_PI / alpha_2 / n_dot_h_2 / n_dot_h_2;
+        return ND_Beckmann(alpha_phong, n_dot_h);
     }
 
     // GGX分布，即Trowbridge-Reitz分布
     if (flag_normal == 2)
     {
-        float roughness_2 = roughness * roughness;
-        return roughness_2 / M_PI / Physics::MathMethods::Pow2(n_dot_h_2 * (roughness_2 - 1) + 1);
+        return ND_GGX(roughness, n_dot_h);
     }
+
     // GTR分布，即Generalized-Trowbridge-Reitz
     if (flag_normal == 3)
     {
-        // 控制高光尾部效果。gamma=1时，GTR即Berry分布，gamma=2时，GTR即GGX（Trowbridge-Reitz）分布
-        float gamma = 2;
-        float roughness_2 = roughness * roughness;
-        float pow_base = n_dot_h_2 * (roughness_2 - 1) + 1;
-        return roughness_2 / M_PI / std::pow(pow_base, gamma);
+        return ND_GTR(roughness, n_dot_h, 2);
     }
 
     return 0;
 }
-
 
 /**
  * @brief 几何函数
@@ -196,7 +180,7 @@ float Material::DistributionOfNormal(const Vector3f &N, const Vector3f &h)
  * @param l 交点->光源
  * @param N 法线
  * @param v 交点->眼睛
- * @return float 
+ * @return float
  */
 float Material::GeometryShadow(const Vector3f &l, const Vector3f &N, const Vector3f &v)
 {
@@ -225,7 +209,7 @@ float Material::GeometryShadow(const Vector3f &l, const Vector3f &N, const Vecto
     // GGX公式（Disney方法）
     if (flag_geo_1 == 3)
     {
-        float alpha_GGX = (0.5 + roughness / 2) * (0.5 + roughness / 2);
+        float alpha_GGX = (0.5 + roughness / 2) * (0.5 + roughness / 2); //粗糙度重映射
         float alpha_GGX_2 = alpha_GGX * alpha_GGX;
         float frac_below = n_dot_v + std::sqrt(alpha_GGX_2 + (1 - alpha_GGX_2) * n_dot_v * n_dot_v);
         G_1 = 2 * n_dot_v / frac_below;
@@ -405,6 +389,8 @@ Vector3f Material::EnergyEval(const Vector3f &wi, const Vector3f &N, const Vecto
 
         case MIRROR:
             // FIXME 这里的除pi到底是为什么？？？？？？？
+            // 因为偏导数
+            // https://zhuanlan.zhihu.com/p/342807202
             return Vector3f(1.f, 1.f, 1.f) * Physics::Optics::Fresnel(-wo, N, this->IOR) * Lambert(-wo, N) / M_PI;
             break;
 
