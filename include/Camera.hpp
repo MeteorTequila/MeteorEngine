@@ -21,7 +21,7 @@ public:
         pos = {0, 0, 0};
         rotate = {0, 0};
         fov = 90;
-        aspectRatio = 4 / 3;
+        aspectRatio = 4 / 3.f;
         zNear = 1;
     }
 
