@@ -2,6 +2,7 @@
 #define METEOR_SHADER_H
 
 #include "eigen-3.4.0/Eigen/Eigen"
+#include "eigen-3.4.0/Eigen/src/Core/Matrix.h"
 #include "global.hpp"
 
 using namespace Eigen;
@@ -71,12 +72,37 @@ namespace Shader
             return roughness_2 / M_PI / std::pow(pow_base, gamma);
         }
 
+        /* -------------------------------------------------------------------------------------------------- */
+        /* --------------------------------------------- 各项异性 --------------------------------------------- */
+        /* -------------------------------------------------------------------------------------------------- */
+        // TODO 待完善https://www.jianshu.com/p/d70ee9d4180e
+
+        // FIXME UE4中Anisotropic Beckmann分布的Shader实现代码(Anisotropic Beckmann Distribution)
+        inline float ND_aniso_Beckmann(float ax, float ay, float NoH, Vector3f H, Vector3f X, Vector3f Y)
+        {
+            float XoH = X.dot(H);
+            float YoH = Y.dot(H);
+            float d = -(XoH * XoH / (ax * ax) + YoH * YoH / (ay * ay)) / NoH * NoH;
+            return std::exp(d) / (M_PI * ax * ay * NoH * NoH * NoH * NoH);
+        }
+
+        // FIXME UE4中Anisotropic Beckmann分布的Shader实现代码(Anisotropic GGX Distribution)
+        // [Burley 2012, "Physically-Based Shading at Disney"]
+        inline float ND_aniso_GGX(float ax, float ay, float NoH, Vector3f H, Vector3f X, Vector3f Y)
+        {
+            float XoH = X.dot(H);
+            float YoH = Y.dot(H);
+            float d = XoH * XoH / (ax * ax) + YoH * YoH / (ay * ay) + NoH * NoH;
+            return 1 / (M_PI * ax * ay * d * d);
+        }
+
     }
 
     // 阴影遮挡函数
     namespace GeometryShader
     {
         // https://zhuanlan.zhihu.com/p/81708753
+        // https://juejin.cn/post/6995333774623899684
         // BSDF定义了一个几何函数 G 用以模拟微表面由于相互遮挡而导致光线的能量丢失的现象，这个函数就叫做阴影遮挡函数，
         // 从定义不难看出，这个函数的取值应该也是从[0,1]的。同时，几何函数有两种形式：
         // G1——微平面在单个方向（光照方向l或视线方向v）上可见比例，光照对应遮蔽函数 masking function；视线对应阴影函数 shadowing function.
@@ -150,7 +176,13 @@ namespace Shader
             return 0.5 / (lambda_v + lambda_l);
         }
 
+        /* -------------------------------------------------------------------------------------------------- */
+        /* --------------------------------------------- 各项异性 --------------------------------------------- */
+        /* -------------------------------------------------------------------------------------------------- */
+        // TODO 待完善https://www.jianshu.com/p/d70ee9d4180e
+
     }
+
 }
 
 #endif

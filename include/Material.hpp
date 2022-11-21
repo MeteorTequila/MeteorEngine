@@ -71,15 +71,16 @@ public:
   float DistributionOfNormal(const Vector3f &N, const Vector3f &h);
   float GeometryShadow(const Vector3f &l, const Vector3f &N, const Vector3f &v);
 
-  float FCookTorrance(const Vector3f &wi, const Vector3f &N, const Vector3f &v);
   float Lambert(const Vector3f &wi, const Vector3f &N);
   std::vector<Vector3f> Phong(const Vector3f &wi, const Vector3f &N);
   std::vector<Vector3f> BlingPhong(const Vector3f &wi, const Vector3f &N, const Vector3f &v);
+  float CookTorranceSpecular(const Vector3f &wi, const Vector3f &N, const Vector3f &wo, const Vector3f &eye);
+
   float GetBrdfSample(const Vector3f &wi, const Vector3f &N, const Vector3f &wo);
   float GetBrdfSample_2();
+
   Vector3f EnergyEval(const Vector3f &wi, const Vector3f &N, const Vector3f &wo);
   Vector3f PhysicalEval(const Vector3f &wi, const Vector3f &N, const Vector3f &wo);
-  Vector3f DisneyEval(const Vector3f &wi, const Vector3f &N, const Vector3f &wo);
 };
 
 #endif

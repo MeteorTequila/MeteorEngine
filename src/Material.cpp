@@ -2,6 +2,7 @@
 #include "Intersection.hpp"
 #include "Physics.hpp"
 #include "Shader.hpp"
+#include "eigen-3.4.0/Eigen/src/Core/Matrix.h"
 #include "global.hpp"
 #include <cmath>
 
@@ -47,7 +48,7 @@ Material::Material(MaterialType _mt)
 
     case TRANSPARENT:
         this->emission = {0, 0, 0};
-        this->IOR = 1.544f; //水晶的折射率
+        this->IOR = 2.42; //钻石的折射率
         this->reflectivity = 0.8;
         this->transmissivity = 0;
         this->kd = {0.2f, 0.4f, 0.8f};
@@ -222,10 +223,6 @@ float Material::GeometryShadow(const Vector3f &l, const Vector3f &N, const Vecto
     return 0.f;
 }
 
-float FCookTorrance(const Vector3f &wi, const Vector3f &N, const Vector3f &v)
-{
-    Vector3f h = (-wi + v).normalized();
-}
 /**
  * @brief lambert光照模型
  *
@@ -307,6 +304,26 @@ std::vector<Vector3f> Material::BlingPhong(const Vector3f &wi, const Vector3f &N
     return {diffuse, specular};
 }
 
+/**
+ * @brief 使用Cook-Torrance模型计算更为真实的反射高光
+ *
+ * @param wi 光源->交点
+ * @param N 法线
+ * @param wo 交点->反射
+ * @param eye 交点->眼睛
+ * @return float
+ */
+float Material::CookTorranceSpecular(const Vector3f &wi, const Vector3f &N, const Vector3f &wo, const Vector3f &eye)
+{
+    Vector3f vHalf = (-wi + eye).normalized();
+    float ND_term = DistributionOfNormal(N, vHalf);            //法线分布
+    float G_term = GeometryShadow(-wi, N, eye);                //几何阴影
+    float F_term = Physics::Optics::Schlick(wi, N, this->IOR); //菲尼尔项
+
+    float t = ND_term * G_term * F_term / 4 / wo.dot(N) / (-wi.dot(N));
+
+    return t;
+}
 // TODO 对于入射该材质的每道wi，得到其入射的概率为
 float Material::GetBrdfSample(const Vector3f &wi, const Vector3f &N, const Vector3f &wo)
 {
@@ -350,30 +367,33 @@ Vector3f Material::EnergyEval(const Vector3f &wi, const Vector3f &N, const Vecto
         switch (this->mt)
         {
         case DIFFUSAL:
+        {
             // lambert项损耗，传播距离损耗（CastRay计算），俄罗斯轮盘概率损耗，球面采样概率损耗
             return this->kd * Lambert(-wo, N) / M_PI;
+        }
 
         case MIRROR:
+        {
             // FIXME 这里的除pi到底是为什么？？？？？？？
             // 因为偏导数
             // https://zhuanlan.zhihu.com/p/342807202
             return Vector3f(1.f, 1.f, 1.f) * Physics::Optics::Fresnel(-wo, N, this->IOR) * Lambert(-wo, N) / M_PI;
             break;
+        }
+
+        case MICROFACET:
+        {
+            Vector3f eyeDir(0.f, 0.f, 0.f);
+            Vector3f diffuse = this->kd * Lambert(-wo, N) / M_PI;
+            Vector3f specular = this->ks * CookTorranceSpecular(wi, N, wo, eyeDir);
+            return diffuse + specular;
+        }
 
         default:
             return this->kd * Lambert(-wo, N) / M_PI;
         }
     }
     return {0.f, 0.f, 0.f};
-}
-
-Vector3f Material::DisneyEval(const Vector3f &wi, const Vector3f &N, const Vector3f &wo)
-{
-    float VoH;
-    if (wo.dot(N) > 0.f)
-    {
-        float F_D90 = 0.5 + 2 * VoH * VoH * roughness;
-    }
 }
 
 /**
