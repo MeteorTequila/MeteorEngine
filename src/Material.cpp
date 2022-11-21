@@ -25,56 +25,81 @@ Material::Material(MaterialType _mt)
     switch (_mt)
     {
     case DIFFUSAL:
+    {
         this->emission = {0, 0, 0};
         this->IOR = 1.51f; //硅酸盐折射率
         this->reflectivity = 0.8;
         this->transmissivity = 0;
         this->kd = {0.725f, 0.71f, 0.68f};
-        this->ks = {1.f - this->kd.x(), 1.f - this->kd.y(), 1.f - this->kd.z()};
+        this->ks = Vector3f(1.0f, 1.0f, 1.0f) - this->kd;
         this->exp = 10;
+        this->roughness = 0.8;
 
         break;
-
+    }
     case MIRROR:
+    {
         this->emission = {0, 0, 0};
         this->IOR = 1.33f; //银的折射率
         this->reflectivity = 0.8;
         this->transmissivity = 0;
         this->kd = {0.2f, 0.4f, 0.8f};
-        this->ks = {1.f - this->kd.x(), 1.f - this->kd.y(), 1.f - this->kd.z()};
+        this->ks = Vector3f(1.0f, 1.0f, 1.0f) - this->kd;
         this->exp = 10;
+        this->roughness = 0;
 
         break;
-
-    case TRANSPARENT:
+    }
+    case MICROFACET:
+    {
         this->emission = {0, 0, 0};
         this->IOR = 2.42; //钻石的折射率
         this->reflectivity = 0.8;
         this->transmissivity = 0;
         this->kd = {0.2f, 0.4f, 0.8f};
-        this->ks = {1.f - this->kd.x(), 1.f - this->kd.y(), 1.f - this->kd.z()};
+        this->ks = Vector3f(1.0f, 1.0f, 1.0f) - this->kd;
         this->exp = 10;
+        this->roughness = 0.8;
+        break;
+    }
+    case TRANSPARENT:
+    {
+        this->emission = {0, 0, 0};
+        this->IOR = 2.42; //钻石的折射率
+        this->reflectivity = 0.8;
+        this->transmissivity = 0;
+        this->kd = {0.2f, 0.4f, 0.8f};
+        this->ks = Vector3f(1.0f, 1.0f, 1.0f) - this->kd;
+        this->exp = 10;
+        this->roughness = 0.1;
+        break;
+    }
 
     case IRREGULAR:
+    {
         this->emission = {0, 0, 0};
         this->IOR = 1.2f;
         this->reflectivity = 0.8;
         this->transmissivity = 0;
         this->kd = {0.2f, 0.4f, 0.8f};
-        this->ks = {1 - 0.2f, 1 - 0.8f, 1 - 0.8f};
+        this->ks = Vector3f(1.0f, 1.0f, 1.0f) - this->kd;
         this->exp = 10;
+        this->roughness = 0.9;
 
         break;
-
+    }
     default:
+    {
         this->emission = {0, 0, 0};
         this->IOR = 1.2f;
         this->reflectivity = 0.8;
         this->transmissivity = 0;
         this->kd = {0.2f, 0.4f, 0.8f};
-        this->ks = {1 - 0.2f, 1 - 0.8f, 1 - 0.8f};
+        this->ks = Vector3f(1.0f, 1.0f, 1.0f) - this->kd;
         this->exp = 10;
+        this->roughness = 0.8;
         break;
+    }
     }
 };
 
@@ -142,34 +167,10 @@ Vector3f Material::GetRandomReflect(const Vector3f &wi, const Vector3f &N)
  */
 float Material::DistributionOfNormal(const Vector3f &N, const Vector3f &h)
 {
-    int flag_normal = 2;      //默认设置为2，主流使用GGX
     float n_dot_h = N.dot(h); // N代表宏观层面的法向量，h半程向量用于表示微观层面的法向量
 
-    // Blinn-Phong分布(UE4方法)
-    if (flag_normal == 0)
-    {
-        return ND_Phong_UE4(alpha_phong, n_dot_h);
-    }
-
-    // Beckmann分布
-    if (flag_normal == 1)
-    {
-        return ND_Beckmann(alpha_phong, n_dot_h);
-    }
-
     // GGX分布，即Trowbridge-Reitz分布
-    if (flag_normal == 2)
-    {
-        return ND_GGX(roughness, n_dot_h);
-    }
-
-    // GTR分布，即Generalized-Trowbridge-Reitz
-    if (flag_normal == 3)
-    {
-        return ND_GTR(roughness, n_dot_h, 2);
-    }
-
-    return 0;
+    return ND_GGX(roughness, n_dot_h);
 }
 
 /**
@@ -184,43 +185,8 @@ float Material::GeometryShadow(const Vector3f &l, const Vector3f &N, const Vecto
     float n_dot_l = N.dot(l);
     float n_dot_v = N.dot(v);
 
-    int flag_geo = 2; // 默认为2
-
-    // Smith [1967]
-    if (flag_geo == 0)
-    {
-        return G_Smith(n_dot_v);
-    }
-
-    // GGX公式（Disney方法）
-    if (flag_geo == 1)
-    {
-        return G_Smith_Disney(n_dot_v, n_dot_l, roughness);
-    }
-
     // UE4的GGX-Smith Correlated Joint 近似方案
-    if (flag_geo == 2)
-    {
-        return G_Smith_UE4(n_dot_v, n_dot_l, roughness);
-    }
-    // Unity HDRP 的GGX-Smith Correlated Joint近似方案
-    if (flag_geo == 3)
-    {
-        return G_Smith_Unity(n_dot_v, n_dot_l, roughness);
-    }
-
-    // Google Filament渲染器 的GGX-Smith Joint近似方案
-    if (flag_geo == 4)
-    {
-        return G_Smith_Google(n_dot_v, n_dot_l, roughness);
-    }
-
-    // [2017]Respawn Entertainment的 GGX-Smith Joint近似方案
-    if (flag_geo == 5)
-    {
-        return G_Smith_Respawn(n_dot_v, n_dot_l, roughness);
-    }
-    return 0.f;
+    return G_Smith_UE4(n_dot_v, n_dot_l, roughness);
 }
 
 /**

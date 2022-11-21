@@ -22,8 +22,7 @@ int main(int argc, char *argv[])
   Material *green = new Material(DIFFUSAL);
   green->kd = {0.14f, 0.45f, 0.091f};
 
-  Material *mirror_ = new Material(MIRROR);
-  Material *irregular_ = new Material(IRREGULAR);
+  Material *microsurface = new Material(MICROFACET);
 
   //新增光源材质
   Material *light = new Material();
@@ -35,13 +34,14 @@ int main(int argc, char *argv[])
 
   // MeshTriangle tallbox("../res/models/cornellbox/tallbox.obj", red);
 
+  printf(" - 构造Mesh对象\n\n");
   MeshTriangle light_("../res/models/cornellbox/light.obj", light);
   MeshTriangle floor_("../res/models/cornellbox/floor.obj", white_0);
   MeshTriangle left_("../res/models/cornellbox/left.obj", red);
   MeshTriangle right_("../res/models/cornellbox/right.obj", green);
 
   MeshTriangle tallbox_("../res/models/cornellbox/tallbox.obj", white_0);
-  MeshTriangle shortbox_("../res/models/cornellbox/shortbox.obj", white_0);
+  MeshTriangle shortbox_("../res/models/cornellbox/shortbox.obj", microsurface);
 
   // Vector3f cameraPos={78, 273, -800};
   // float cameraFov=40;
@@ -56,9 +56,11 @@ int main(int argc, char *argv[])
   scene.add(&shortbox_);
   scene.add(&tallbox_);
 
+  printf(" - 添加物体成功，当前场景内物体数量为%lu \n\n", scene.objects.size());
+
   scene.PreProcessing();
 
-  Renderer r(64);
+  Renderer r(256);
 
   r.Render_2(scene);
 

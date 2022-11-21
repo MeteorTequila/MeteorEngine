@@ -1,5 +1,7 @@
 #pragma once
 #include "eigen-3.4.0/Eigen/Eigen"
+#include "eigen-3.4.0/Eigen/src/Core/Matrix.h"
+using namespace Eigen;
 
 class Camera
 {
@@ -28,6 +30,13 @@ public:
 
         pos = {_x, _y, _z};
     };
+
+    Camera(const Vector3f _pos, const float _fov, const Vector2f _rotate = Vector2f(0.f, 0.f))
+    {
+        pos = _pos;
+        fov = _fov;
+        rotate = _rotate;
+    }
 
     void SetCamera(const Vector3f _pos, const float _fov)
     {

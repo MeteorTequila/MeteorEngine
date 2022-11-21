@@ -109,7 +109,7 @@ namespace Shader
         // G2——微平面在光照和视线方向共同可见的比例，称为联合遮蔽阴影函数 joint masking-shadowing function.
         // 其中，G2由G1推导而来，同时一般微表面材质计算所说的几何函数就是指G2
 
-        // Smith遮蔽函数
+        // [1967]Smith遮蔽函数
         inline float G_Smith(const float &NdotV)
         {
             if (NdotV > 0)

@@ -10,8 +10,8 @@ public:
     std::vector<Vector3f> framebuffer;
     int spp = 2; //每像素入射光线采样数量，sample per pixel
 
-    Renderer(const int &_spp):spp(_spp) { printf(" - 开始渲染\n\n"); };
-    ~Renderer() { printf(" - 渲染完毕\n\n"); }
+    Renderer(const int &_spp) : spp(_spp){};
+    ~Renderer() {}
 
     // 为什么使用const
     // 防止修饰的变量被修改，刚接触这一点时，还是有点懵的。都const修饰了，怎么可能被修改？

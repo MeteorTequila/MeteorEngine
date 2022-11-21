@@ -10,8 +10,6 @@
 MeshTriangle::MeshTriangle(const std::string &filename, Material *mt = new Material())
 {
 
-  printf(" - 开始构造Mesh对象\n\n");
-
   // 载入文件名
   objl::Loader loader;
   loader.LoadFile(filename);
@@ -66,7 +64,7 @@ MeshTriangle::MeshTriangle(const std::string &filename, Material *mt = new Mater
   // 为Mesh model构建加速结构
   this->acc = new Acceleration(ptrs);
 
-  printf(" - Mesh对象构造完毕\n\n");
+  
 }
 
 /**

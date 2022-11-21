@@ -30,7 +30,6 @@ void Scene::PreProcessing()
 void Scene::add(Object *object)
 {
   objects.push_back(object);
-  printf(" - 添加物体成功，当前场景内物体数量为%lu \n\n", objects.size());
 }
 
 /**
