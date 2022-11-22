@@ -1,3 +1,0 @@
-/Users/crystalized/cpp_project/myRender/myGraphicEngine/build/CMakeFiles/MeteorEngine.dir
-/Users/crystalized/cpp_project/myRender/myGraphicEngine/build/CMakeFiles/edit_cache.dir
-/Users/crystalized/cpp_project/myRender/myGraphicEngine/build/CMakeFiles/rebuild_cache.dir
