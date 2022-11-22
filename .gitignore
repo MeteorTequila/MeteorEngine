@@ -1,3 +1,5 @@
+# https://blog.csdn.net/a435262767/article/details/93972377
+
 # vscode ================================
 .vscode/*
 !.vscode/settings.json
@@ -53,3 +55,6 @@ cmake_install.cmake
 install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
+
+# Clangd ================================
+.cache/*

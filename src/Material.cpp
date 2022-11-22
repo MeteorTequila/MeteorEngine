@@ -281,6 +281,7 @@ std::vector<Vector3f> Material::BlingPhong(const Vector3f &wi, const Vector3f &N
  */
 float Material::CookTorranceSpecular(const Vector3f &wi, const Vector3f &N, const Vector3f &wo, const Vector3f &eye)
 {
+    // FIXME 会反射出金色的光线，初步估计是除0误差导致的，需要优化
     Vector3f vHalf = (-wi + eye).normalized();
     float ND_term = DistributionOfNormal(N, vHalf);            //法线分布
     float G_term = GeometryShadow(-wi, N, eye);                //几何阴影
