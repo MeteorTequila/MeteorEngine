@@ -279,17 +279,14 @@ std::vector<Vector3f> Material::BlingPhong(const Vector3f &wi, const Vector3f &N
  * @param eye 交点->眼睛
  * @return float
  */
-float Material::CookTorranceSpecular(const Vector3f &wi, const Vector3f &N, const Vector3f &wo, const Vector3f &eye)
+float Material::CookTorranceSpecular(const Vector3f &toL, const Vector3f &N, const Vector3f &wo, const Vector3f &toEye)
 {
     // FIXME 会反射出金色的光线，初步估计是除0误差导致的，需要优化
-    Vector3f vHalf = (-wi + eye).normalized();
-    float ND_term = DistributionOfNormal(N, vHalf);            //法线分布
-    float G_term = GeometryShadow(-wi, N, eye);                //几何阴影
-    float F_term = Physics::Optics::Schlick(wi, N, this->IOR); //菲尼尔项
+    Vector3f vHalf = (toL + toEye).normalized();
+    float ND_term = DistributionOfNormal(N, vHalf); //法线分布
+    float G_term = GeometryShadow(toL, N, toEye);     //几何阴影
 
-    float t = ND_term * G_term * F_term / 4 / wo.dot(N) / (-wi.dot(N));
-
-    return t;
+    return ND_term * G_term / 4 / wo.dot(N) / (toL.dot(N));
 }
 // TODO 对于入射该材质的每道wi，得到其入射的概率为
 float Material::GetBrdfSample(const Vector3f &wi, const Vector3f &N, const Vector3f &wo)
@@ -350,10 +347,15 @@ Vector3f Material::EnergyEval(const Vector3f &wi, const Vector3f &N, const Vecto
 
         case MICROFACET:
         {
-            Vector3f eyeDir(0.f, 0.f, 0.f);
+            // Vector3f eyeDir(0.f, 0.f, 0.f);
             Vector3f diffuse = this->kd * Lambert(-wo, N) / M_PI;
-            Vector3f specular = this->ks * CookTorranceSpecular(wi, N, wo, eyeDir);
-            return diffuse + specular;
+            Vector3f specular = this->ks * CookTorranceSpecular(wo, N, -wi, -wi);
+
+            // 能量守恒
+            float rRatio = Physics::Optics::Schlick(-wo, N, this->IOR);
+            float tRatio = 1.f - rRatio;
+
+            return tRatio * diffuse + rRatio * specular;
         }
 
         default:

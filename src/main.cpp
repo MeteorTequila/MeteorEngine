@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 
   scene.PreProcessing();
 
-  Renderer r(256);
+  Renderer r(64);
 
   r.Render_2(scene);
 

@@ -1,6 +1,5 @@
 #pragma once
 #include "eigen-3.4.0/Eigen/Eigen"
-#include "eigen-3.4.0/Eigen/src/Core/Matrix.h"
 using namespace Eigen;
 
 class Camera
