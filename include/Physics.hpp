@@ -189,7 +189,7 @@ namespace Physics
             }
 
             float rslt = F0 + (1 - F0) * MathMethods::Pow5(1 - costheta);
-
+            
             return rslt;
         }
     }

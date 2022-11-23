@@ -15,7 +15,9 @@ static std::uniform_real_distribution<float> dist(0.f, 1.f); // distribution in 
  */
 inline float get_random_float()
 {
-
+    // TODO 使用低差异序列来生成随机数
+    // https://zhuanlan.zhihu.com/p/343666731
+    // https://blog.csdn.net/lr_shadow/article/details/120446814
     return dist(rng);
 }
 
@@ -65,4 +67,4 @@ inline void UpdateProgress(float progress)
 };
 
 // 测试用
-inline long arg_t0 = 0, arg_t1 = 0, arg_t2 = 0, arg_t3 = 0, arg_t4 = 0;
+inline double arg_t0 = 0, arg_t1 = 0, arg_t2 = 0, arg_t3 = 0, arg_t4 = 0;

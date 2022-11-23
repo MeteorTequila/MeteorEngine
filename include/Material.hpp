@@ -45,20 +45,21 @@ public:
   float transmissivity; //透射率
   float absorptivity;   //吸收率
 
-  Vector3f kd; //漫反射率（对每个颜色的漫反射率）
-  Vector3f ks; //镜面反射率（对每个颜色的镜面反射率）
+  Vector3f kd; //漫反射率（对每个rgb颜色的漫反射率）
+  Vector3f ks; //镜面反射率（对每个rgb色的镜面反射率）
 
   int exp;           //镜面指数
   MaterialType mt;   //材质类型
   Vector3f emission; //材质自发光
 
   // 微表面属性
-  Vector3f baseColor; //固有色
-  bool subsurface;    //次表面
-  float metallic;     //金属度
-  float alpha_phong;  //光泽度
-  float roughness;    //粗糙度
-  float anisotropic;  //各向异性程度。用于控制镜面反射高光的纵横比
+  Vector3f baseColor;     //在100%强度直射下，呈现的颜色
+  Vector3f specularColor; //在100%强度直射下，高光颜色
+  bool subsurface;        //次表面
+  float metallic;         //金属度
+  float alpha_phong;      //光泽度
+  float roughness;        //粗糙度
+  float anisotropic;      //各向异性程度。用于控制镜面反射高光的纵横比
 
   Material();
   Material(MaterialType _mt);
@@ -74,9 +75,9 @@ public:
   float Lambert(const Vector3f &wi, const Vector3f &N);
   std::vector<Vector3f> Phong(const Vector3f &wi, const Vector3f &N);
   std::vector<Vector3f> BlingPhong(const Vector3f &wi, const Vector3f &N, const Vector3f &v);
-  float CookTorranceSpecular(const Vector3f &wi, const Vector3f &N, const Vector3f &wo, const Vector3f &eye);
+  float CookTorranceSpecular(const Vector3f &wi, const Vector3f &N, const Vector3f &eye);
 
-  float GetBrdfSample(const Vector3f &wi, const Vector3f &N, const Vector3f &wo);
+  float GetBrdfSample(const Vector3f &toEye, const Vector3f &N, const Vector3f &toLight);
   float GetBrdfSample_2();
 
   Vector3f EnergyEval(const Vector3f &wi, const Vector3f &N, const Vector3f &wo);

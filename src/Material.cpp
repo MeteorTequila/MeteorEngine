@@ -2,7 +2,6 @@
 #include "Intersection.hpp"
 #include "Physics.hpp"
 #include "Shader.hpp"
-#include "eigen-3.4.0/Eigen/src/Core/Matrix.h"
 #include "global.hpp"
 #include <cmath>
 
@@ -13,8 +12,10 @@ Material::Material()
     this->reflectivity = 0.8;
     this->transmissivity = 0;
     this->kd = {0.2f, 0.4f, 0.8f};
-    this->ks = {1 - 0.2f, 1 - 0.8f, 1 - 0.8f};
+    this->ks = Vector3f(1.0f, 1.0f, 1.0f) - this->kd;
     this->exp = 10;
+
+    this->baseColor = {0.2f, 0.4f, 0.8f};
 };
 
 // TODO 材质初始化方法
@@ -31,8 +32,11 @@ Material::Material(MaterialType _mt)
         this->reflectivity = 0.8;
         this->transmissivity = 0;
         this->kd = {0.725f, 0.71f, 0.68f};
+
         this->ks = Vector3f(1.0f, 1.0f, 1.0f) - this->kd;
         this->exp = 10;
+
+        this->baseColor = {0.725f, 0.71f, 0.68f};
         this->roughness = 0.8;
 
         break;
@@ -46,6 +50,8 @@ Material::Material(MaterialType _mt)
         this->kd = {0.2f, 0.4f, 0.8f};
         this->ks = Vector3f(1.0f, 1.0f, 1.0f) - this->kd;
         this->exp = 10;
+
+        this->baseColor = {0.2f, 0.4f, 0.8f};
         this->roughness = 0;
 
         break;
@@ -57,9 +63,12 @@ Material::Material(MaterialType _mt)
         this->reflectivity = 0.8;
         this->transmissivity = 0;
         this->kd = {0.2f, 0.4f, 0.8f};
-        this->ks = Vector3f(1.0f, 1.0f, 1.0f) - this->kd;
+        // this->ks = Vector3f(1.0f, 1.0f, 1.0f) - this->kd;
+        this->ks = {0.3f, 0.5f, 0.9f};
         this->exp = 10;
-        this->roughness = 0.8;
+
+        this->baseColor = {0.2f, 0.4f, 0.8f};
+        this->roughness = 0.35;
         break;
     }
     case TRANSPARENT:
@@ -71,6 +80,8 @@ Material::Material(MaterialType _mt)
         this->kd = {0.2f, 0.4f, 0.8f};
         this->ks = Vector3f(1.0f, 1.0f, 1.0f) - this->kd;
         this->exp = 10;
+
+        this->baseColor = {0.2f, 0.4f, 0.8f};
         this->roughness = 0.1;
         break;
     }
@@ -84,6 +95,8 @@ Material::Material(MaterialType _mt)
         this->kd = {0.2f, 0.4f, 0.8f};
         this->ks = Vector3f(1.0f, 1.0f, 1.0f) - this->kd;
         this->exp = 10;
+
+        this->baseColor = {0.2f, 0.4f, 0.8f};
         this->roughness = 0.9;
 
         break;
@@ -97,6 +110,8 @@ Material::Material(MaterialType _mt)
         this->kd = {0.2f, 0.4f, 0.8f};
         this->ks = Vector3f(1.0f, 1.0f, 1.0f) - this->kd;
         this->exp = 10;
+
+        this->baseColor = {0.2f, 0.4f, 0.8f};
         this->roughness = 0.8;
         break;
     }
@@ -116,13 +131,11 @@ bool Material::HasEmission() const
 // 获取当前材质的发光参数
 Vector3f Material::GetEmission() const
 {
-
     return this->emission;
 }
 
 /**
  * @brief 对以当前交点为圆心的单位半球均匀采样，得到一个随机的反射方向
- *
  * @param wi 入射方向
  * @param N 表面法线
  * @return Vector3f 随机的出射方向
@@ -167,10 +180,10 @@ Vector3f Material::GetRandomReflect(const Vector3f &wi, const Vector3f &N)
  */
 float Material::DistributionOfNormal(const Vector3f &N, const Vector3f &h)
 {
-    float n_dot_h = N.dot(h); // N代表宏观层面的法向量，h半程向量用于表示微观层面的法向量
+    float n_dot_h = N.dot(h) > 0.f ? N.dot(h) : 0.f; // N代表宏观层面的法向量，h半程向量用于表示微观层面的法向量
 
     // GGX分布，即Trowbridge-Reitz分布
-    return ND_GGX(roughness, n_dot_h);
+    return ND_GGX(n_dot_h, roughness);
 }
 
 /**
@@ -182,8 +195,8 @@ float Material::DistributionOfNormal(const Vector3f &N, const Vector3f &h)
  */
 float Material::GeometryShadow(const Vector3f &l, const Vector3f &N, const Vector3f &v)
 {
-    float n_dot_l = N.dot(l);
-    float n_dot_v = N.dot(v);
+    float n_dot_l = N.dot(l) > 0.f ? N.dot(l) : 0.f;
+    float n_dot_v = N.dot(v) > 0.f ? N.dot(v) : 0.f;
 
     // UE4的GGX-Smith Correlated Joint 近似方案
     return G_Smith_UE4(n_dot_v, n_dot_l, roughness);
@@ -222,7 +235,7 @@ std::vector<Vector3f> Material::Phong(const Vector3f &wi, const Vector3f &N)
         costheta_i = 1;
     }
 
-    Vector3f diffuse = costheta_i * kd;
+    Vector3f diffuse = costheta_i * this->baseColor;
 
     // 镜面反射
     Vector3f wo = Physics::Optics::GetReflect(wi, N);
@@ -255,7 +268,7 @@ std::vector<Vector3f> Material::BlingPhong(const Vector3f &wi, const Vector3f &N
     {
         costheta_i = 1;
     }
-    Vector3f diffuse = costheta_i * kd;
+    Vector3f diffuse = costheta_i * this->baseColor;
 
     // 镜面反射
     Vector3f halfVec = (-wi + v).normalized();
@@ -272,45 +285,59 @@ std::vector<Vector3f> Material::BlingPhong(const Vector3f &wi, const Vector3f &N
 
 /**
  * @brief 使用Cook-Torrance模型计算更为真实的反射高光
- *
- * @param wi 光源->交点
+ * @param toL 交点->光源
  * @param N 法线
  * @param wo 交点->反射
  * @param eye 交点->眼睛
  * @return float
  */
-float Material::CookTorranceSpecular(const Vector3f &toL, const Vector3f &N, const Vector3f &wo, const Vector3f &toEye)
+float Material::CookTorranceSpecular(const Vector3f &L, const Vector3f &N, const Vector3f &V)
 {
     // FIXME 会反射出金色的光线，初步估计是除0误差导致的，需要优化
-    Vector3f vHalf = (toL + toEye).normalized();
-    float ND_term = DistributionOfNormal(N, vHalf); //法线分布
-    float G_term = GeometryShadow(toL, N, toEye);     //几何阴影
+    // 金色是由Vector3f(1.f)-kd产生的
+    Vector3f H = (L + V).normalized();
+    float ND_term = DistributionOfNormal(N, H); //法线分布
+    float G_term = GeometryShadow(L, N, V);     //几何阴影
 
-    return ND_term * G_term / 4 / wo.dot(N) / (toL.dot(N));
+    return ND_term * G_term / 4 / std::max(L.dot(N), 0.f) / std::max(H.dot(N), 0.f);
 }
-// TODO 对于入射该材质的每道wi，得到其入射的概率为
-float Material::GetBrdfSample(const Vector3f &wi, const Vector3f &N, const Vector3f &wo)
+// TODO 对于入射该材质的每道-wo，得到其入射的概率为
+float Material::GetBrdfSample(const Vector3f &V, const Vector3f &N, const Vector3f &L)
 {
-    if (wo.dot(N) > 0.f)
+    if (L.dot(N) > 0.f)
     {
         switch (this->mt)
         {
         case DIFFUSAL:
+        {
             // return MaterialPdf::uniformlyPdf;
             return 0.5f / M_PI;
             break;
+        }
+        case MICROFACET:
+        {
+            // return MaterialPdf::uniformlyPdf;
+            return 0.5f / M_PI;
+            break;
+        }
         case MIRROR:
+        {
             // return MaterialPdf::specularPdf;
             return 1.0f;
             break;
+        }
         case IRREGULAR:
+        {
             // 各项异性材料每个方向的反射概率不一致
             return MaterialPdf::importancePdf;
             break;
+        }
         default:
+        {
             // return MaterialPdf::uniformlyPdf;
             return 0.5f / M_PI;
             break;
+        }
         }
     }
     return 0.f;
@@ -318,7 +345,6 @@ float Material::GetBrdfSample(const Vector3f &wi, const Vector3f &N, const Vecto
 
 /**
  * @brief 逆光路地计算光线传播的能量损耗
- *
  * @param wi 视线->交点
  * @param N 法线
  * @param wo 交点->出射
@@ -333,33 +359,35 @@ Vector3f Material::EnergyEval(const Vector3f &wi, const Vector3f &N, const Vecto
         case DIFFUSAL:
         {
             // lambert项损耗，传播距离损耗（CastRay计算），俄罗斯轮盘概率损耗，球面采样概率损耗
-            return this->kd * Lambert(-wo, N) / M_PI;
+            return this->baseColor * Lambert(-wo, N) / M_PI;
         }
 
         case MIRROR:
         {
-            // FIXME 这里的除pi到底是为什么？？？？？？？
-            // 因为偏导数
-            // https://zhuanlan.zhihu.com/p/342807202
+            // 这里的除pi到底是为什么？？？？？？？
+            // 因为偏导数 https://zhuanlan.zhihu.com/p/342807202
             return Vector3f(1.f, 1.f, 1.f) * Physics::Optics::Fresnel(-wo, N, this->IOR) * Lambert(-wo, N) / M_PI;
             break;
         }
 
         case MICROFACET:
         {
-            // Vector3f eyeDir(0.f, 0.f, 0.f);
-            Vector3f diffuse = this->kd * Lambert(-wo, N) / M_PI;
-            Vector3f specular = this->ks * CookTorranceSpecular(wo, N, -wi, -wi);
+
+            Vector3f diffuse = this->baseColor * Lambert(-wo, N) / M_PI;
+            // FIXME高光颜色过强
+            Vector3f specular = this->baseColor * CookTorranceSpecular(wo, N, -wi);
 
             // 能量守恒
             float rRatio = Physics::Optics::Schlick(-wo, N, this->IOR);
+            // arg_t1 += rRatio;
             float tRatio = 1.f - rRatio;
 
             return tRatio * diffuse + rRatio * specular;
+            // return rRatio * specular;
         }
 
         default:
-            return this->kd * Lambert(-wo, N) / M_PI;
+            return this->baseColor * Lambert(-wo, N) / M_PI;
         }
     }
     return {0.f, 0.f, 0.f};

@@ -14,13 +14,13 @@ int main(int argc, char *argv[])
 
   //新建材质，漫反射，
   Material *white_0 = new Material(DIFFUSAL);
-  white_0->kd = {0.725f, 0.71f, 0.68f};
+  white_0->baseColor = {0.725f, 0.71f, 0.68f};
 
   Material *red = new Material(DIFFUSAL);
-  red->kd = {0.63f, 0.065f, 0.05f};
+  red->baseColor = {0.63f, 0.065f, 0.05f};
 
   Material *green = new Material(DIFFUSAL);
-  green->kd = {0.14f, 0.45f, 0.091f};
+  green->baseColor = {0.14f, 0.45f, 0.091f};
 
   Material *microsurface = new Material(MICROFACET);
 
@@ -64,5 +64,5 @@ int main(int argc, char *argv[])
 
   r.Render_2(scene);
 
-  printf("t0 is %ld, t1 is %ld, t2 is %ld ,t3 is %ld ,t4 is %ld\n\n", arg_t0, arg_t1, arg_t2, arg_t3, arg_t4);
+  printf("t0 is %f, t1 is %f, t2 is %f ,t3 is %f ,t4 is %f\n\n", arg_t0, arg_t1, arg_t2, arg_t3, arg_t4);
 }
