@@ -16,9 +16,9 @@ public:
     // 为什么使用const
     // 防止修饰的变量被修改，刚接触这一点时，还是有点懵的。都const修饰了，怎么可能被修改？
     // https://blog.csdn.net/qq_45654722/article/details/106104914
-    void Render_0(Scene &scene);
-    void Render_1(Scene &scene);
-    void Render_2(Scene &scene);
+    void PathTracer_0(Scene &scene);
+    void PathTracer_1(Scene &scene);
+    void PathTracer_2(Scene &scene);
 
     Matrix4f GetProjectionMatrix(Scene &scene);
 

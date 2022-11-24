@@ -74,7 +74,7 @@ Matrix4f Renderer::GetProjectionMatrix(Scene &scene)
 }
 
 // 从摄像机穿过像素平面看向物体
-void Renderer::Render_0(Scene &scene)
+void Renderer::PathTracer_0(Scene &scene)
 {
   printf(" - 执行普通渲染\n\n");
 
@@ -114,7 +114,7 @@ void Renderer::Render_0(Scene &scene)
  * @brief 最终渲染函数，在此处生成图像
  * 在中间使用蒙特卡洛方法，对每个像素发射spp道EyeRay，最后取所有EyeRay的平均值
  */
-void Renderer::Render_1(Scene &scene)
+void Renderer::PathTracer_1(Scene &scene)
 {
   // #pragma omp parallel for
 
@@ -238,7 +238,7 @@ void Renderer::para(Vector3f _eyePos, std::vector<Vector3f> &_framebuffer, Scene
  * https://blog.csdn.net/ycrsw/article/details/124408789?spm=1001.2014.3001.5502
  * @param scene
  */
-void Renderer::Render_2(Scene &scene)
+void Renderer::PathTracer_2(Scene &scene)
 {
   printf(" - 执行openmp多线程渲染\n\n");
 

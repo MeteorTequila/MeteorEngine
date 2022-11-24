@@ -85,8 +85,8 @@ void Scene::GetEmissionSample(Intersection &pos, float &pdf) const
 }
 
 /**
- * @brief 路径追踪，在场景中递归的发射光线
- * 一道光线由摄像机发射往像素，之后自动递归的向场景中其他方向发射光线
+ * @brief 全局光照(Global Ilumination)
+ * 路径追踪，在场景中递归的发射光线一道光线由摄像机发射往像素，之后自动递归的向场景中其他方向发射光线
  * @param ray EyeRay或者ReflectRay或者RefractRay
  * @return Vector3f
  */

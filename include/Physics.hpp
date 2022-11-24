@@ -3,6 +3,7 @@
 #define METEOR_PHYSICS_HPP
 
 #include "eigen-3.4.0/Eigen/Eigen"
+#include "eigen-3.4.0/Eigen/src/Core/Matrix.h"
 #include "global.hpp"
 
 using namespace Eigen;
@@ -143,21 +144,22 @@ namespace Physics
 
         /**
          * @brief 使用Schlick方法，近似Fresnel项
-         *
+         * 我们需要预先计算表面在正视角(即以0度角正视表面)下的反应（𝐹0），然后就可以跟之前的Fresnel-Schlick算法一样，根据观察角度来进行插值
          * @param wi 入射光方向
          * @param n 表面法线
          * @param eta_t 折射介质的绝对折射率
          * @param eta_i 入射介质的绝对折射率（默认为空气=1）
          * @return float 原光线的反射占比
          */
-        inline float Schlick(const Vector3f &wi, const Vector3f &N, const float &eta_t, const float &eta_i = 1)
+        inline Vector3f FresnelSchlick(const Vector3f &wi, const Vector3f &N, const float &eta_t, const float &eta_i = 1)
         {
 
             float eta = eta_i / eta_t; // 此处的eta1/eta称之为：相对IOR
 
             if (std::abs(eta - 1) < EPSILON) // disney 2015年的发表，相对IOR接近1时，近似效果不好，建议使用原来的Fresnel方程
             {
-                return Fresnel(wi, N, eta_t);
+                float nom = Fresnel(wi, N, eta_t);
+                return Vector3f(nom, nom, nom);
             }
 
             float costheta = -wi.dot(N); //入射角
@@ -175,21 +177,22 @@ namespace Physics
             // 现实中有些材质的反射率更低，比如水是2%，而有些绝缘材质则反射率更高，例如钻石是0.18 [35]。
             // 渲染器中这个数值一般都是写死的，不随材质而改变，这个数值对最后的结果也有很大的影响。
 
-            float F0;
+            Vector3f F0;
 
             int f0_flag = 0;
 
             if (f0_flag == 0)
             {
-                F0 = 0.04f;
+                F0 = {0.04f, 0.04f, 0.04f};
             }
             else
             {
-                F0 = ((eta_t - eta_i) / (eta_t + eta_i)) * ((eta_t - eta_i) / (eta_t + eta_i));
+                float temp = ((eta_t - eta_i) / (eta_t + eta_i)) * ((eta_t - eta_i) / (eta_t + eta_i));
+                F0 = {temp, temp, temp};
             }
 
-            float rslt = F0 + (1 - F0) * MathMethods::Pow5(1 - costheta);
-            
+            Vector3f rslt = F0 + (Vector3f(1.f, 1.f, 1.f) - F0) * MathMethods::Pow5(1 - costheta);
+
             return rslt;
         }
     }

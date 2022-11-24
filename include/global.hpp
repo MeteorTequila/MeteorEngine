@@ -28,7 +28,7 @@ const float EPSILON = 100 * 0.00001f;
 const float XI = 0.8;
 
 // 光源强度校正lambda
-const float LAMBDA = 40.f;
+const float LAMBDA = 50.f;
 
 inline void ProgressBar()
 {
@@ -67,4 +67,4 @@ inline void UpdateProgress(float progress)
 };
 
 // 测试用
-inline double arg_t0 = 0, arg_t1 = 0, arg_t2 = 0, arg_t3 = 0, arg_t4 = 0;
+inline int arg_t0 = 0, arg_t1 = 0, arg_t2 = 0, arg_t3 = 0, arg_t4 = 0;

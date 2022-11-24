@@ -59,7 +59,8 @@ Material::Material(MaterialType _mt)
     case MICROFACET:
     {
         this->emission = {0, 0, 0};
-        this->IOR = 2.42; //钻石的折射率
+        // this->IOR = 2.42; //钻石的折射率
+        this->IOR = 1.85;
         this->reflectivity = 0.8;
         this->transmissivity = 0;
         this->kd = {0.2f, 0.4f, 0.8f};
@@ -143,7 +144,7 @@ Vector3f Material::GetEmission() const
 Vector3f Material::GetRandomReflect(const Vector3f &wi, const Vector3f &N)
 {
     // 不同的随机办法
-    int sample_flag = 1;
+    int sample_flag = 0;
 
     if (sample_flag == 0)
     { // games101 作业7的的采样方法
@@ -176,14 +177,17 @@ Vector3f Material::GetRandomReflect(const Vector3f &wi, const Vector3f &N)
  * @brief 法线分布项
  * @param N 表面法线
  * @param h 光源方向与人眼方向的半程向量
- * @return float
+ * @return float [0.0, 1.0]
  */
 float Material::DistributionOfNormal(const Vector3f &N, const Vector3f &h)
 {
     float n_dot_h = N.dot(h) > 0.f ? N.dot(h) : 0.f; // N代表宏观层面的法向量，h半程向量用于表示微观层面的法向量
 
     // GGX分布，即Trowbridge-Reitz分布
-    return ND_GGX(n_dot_h, roughness);
+    return ND_test(n_dot_h, roughness);
+
+    //测试用
+    // return ND_test(n_dot_h, roughness);
 }
 
 /**
@@ -191,7 +195,7 @@ float Material::DistributionOfNormal(const Vector3f &N, const Vector3f &h)
  * @param l 交点->光源
  * @param N 法线
  * @param v 交点->眼睛
- * @return float
+ * @return float [0.0, 1.0]
  */
 float Material::GeometryShadow(const Vector3f &l, const Vector3f &N, const Vector3f &v)
 {
@@ -199,12 +203,14 @@ float Material::GeometryShadow(const Vector3f &l, const Vector3f &N, const Vecto
     float n_dot_v = N.dot(v) > 0.f ? N.dot(v) : 0.f;
 
     // UE4的GGX-Smith Correlated Joint 近似方案
-    return G_Smith_UE4(n_dot_v, n_dot_l, roughness);
+    // return G_Smith_UE4(n_dot_v, n_dot_l, roughness);
+
+    //测试用
+    return G_Test(n_dot_v, n_dot_l, roughness);
 }
 
 /**
  * @brief lambert光照模型
- *
  * @param wi 光->交点
  * @param N 表面法线
  * @return float 返回在wi入射角度下，N表面接受到的能量占比系数
@@ -219,6 +225,7 @@ float Material::Lambert(const Vector3f &wi, const Vector3f &N)
     }
     return c * costheta;
 }
+
 /**
  * @brief 使用Phong光照模型
  * Phong的高光是通过出射角和入射角的夹角计算的
@@ -254,7 +261,6 @@ std::vector<Vector3f> Material::Phong(const Vector3f &wi, const Vector3f &N)
 
 /**
  * @brief 使用Blinn-Phong光照模型
- *
  * @param wi 光线->交点
  * @param N 表面法线方向
  * @param v 交点->眼睛
@@ -293,13 +299,16 @@ std::vector<Vector3f> Material::BlingPhong(const Vector3f &wi, const Vector3f &N
  */
 float Material::CookTorranceSpecular(const Vector3f &L, const Vector3f &N, const Vector3f &V)
 {
-    // FIXME 会反射出金色的光线，初步估计是除0误差导致的，需要优化
-    // 金色是由Vector3f(1.f)-kd产生的
+
     Vector3f H = (L + V).normalized();
     float ND_term = DistributionOfNormal(N, H); //法线分布
     float G_term = GeometryShadow(L, N, V);     //几何阴影
 
-    return ND_term * G_term / 4 / std::max(L.dot(N), 0.f) / std::max(H.dot(N), 0.f);
+    // printf("D: %f, G: %f ;", ND_term, G_term);
+
+    float denom = 4 * std::max(L.dot(N), 0.f) * std::max(H.dot(N), 0.f);
+
+    return ND_term * G_term / std::max(denom, EPSILON);
 }
 // TODO 对于入射该材质的每道-wo，得到其入射的概率为
 float Material::GetBrdfSample(const Vector3f &V, const Vector3f &N, const Vector3f &L)
@@ -375,15 +384,15 @@ Vector3f Material::EnergyEval(const Vector3f &wi, const Vector3f &N, const Vecto
 
             Vector3f diffuse = this->baseColor * Lambert(-wo, N) / M_PI;
             // FIXME高光颜色过强
-            Vector3f specular = this->baseColor * CookTorranceSpecular(wo, N, -wi);
+            Vector3f specular = this->ks * CookTorranceSpecular(wo, N, -wi);
 
             // 能量守恒
-            float rRatio = Physics::Optics::Schlick(-wo, N, this->IOR);
-            // arg_t1 += rRatio;
-            float tRatio = 1.f - rRatio;
+            Vector3f rRatio = Physics::Optics::FresnelSchlick(-wo, N, this->IOR);
 
-            return tRatio * diffuse + rRatio * specular;
-            // return rRatio * specular;
+            Vector3f tRatio = Vector3f(1.f, 1.f, 1.f) - rRatio;
+
+            return tRatio.cwiseProduct(diffuse) + rRatio.cwiseProduct(specular);
+            // return rRatio.cwiseProduct(specular);
         }
 
         default:

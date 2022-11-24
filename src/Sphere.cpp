@@ -5,6 +5,7 @@ Sphere::Sphere(const Vector3f &_center, const float &_radius, Material *_m)
 {
     this->center = _center;
     this->radius = _radius;
+    this->radius2 = _radius * _radius;
     this->m = _m;
     this->area = M_PI * _radius * _radius;
 }
