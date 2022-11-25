@@ -1,7 +1,6 @@
 #ifndef METEOR_BOUNDBOX_H
 #define METEOR_BOUNDBOX_H
 
-// #include "eigen-3.4.0/Eigen/Eigen"
 #include "Eigen/Eigen"
 
 #include "Ray.hpp"

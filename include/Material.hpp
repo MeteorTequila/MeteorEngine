@@ -3,7 +3,6 @@
 #define METEOR_MATERIAL_H
 
 #include "Physics.hpp"
-// #include "eigen-3.4.0/Eigen/Eigen"
 #include "Eigen/Eigen"
 #include "global.hpp"
 #include "Shader.hpp"

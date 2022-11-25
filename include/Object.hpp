@@ -2,7 +2,6 @@
 #ifndef METEOR_OBJECT_H
 #define METEOR_OBJECT_H
 
-// #include "eigen-3.4.0/Eigen/Eigen"
 
 #include "Eigen/Eigen"
 

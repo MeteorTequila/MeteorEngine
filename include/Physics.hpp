@@ -1,9 +1,8 @@
 
-#ifndef METEOR_PHYSICS_HPP
-#define METEOR_PHYSICS_HPP
+#ifndef METEOR_PHYSICS_H
+#define METEOR_PHYSICS_H
 
-// #include "eigen-3.4.0/Eigen/Eigen"
-// #include "eigen-3.4.0/Eigen/src/Core/Matrix.h"
+
 
 #include "Eigen/Eigen"
 

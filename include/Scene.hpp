@@ -2,7 +2,6 @@
 
 #include "Eigen/Eigen"
 
-// #include "Eigen/Eigen"
 
 #include "Object.hpp"
 #include "Camera.hpp"
