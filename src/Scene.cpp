@@ -1,6 +1,5 @@
 #include "Scene.hpp"
 #include "Acceleration.hpp"
-#include "eigen-3.4.0/Eigen/Eigen"
 #include "global.hpp"
 
 // 通过width和height构造场景

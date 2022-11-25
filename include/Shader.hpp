@@ -1,7 +1,8 @@
 #ifndef METEOR_SHADER_H
 #define METEOR_SHADER_H
 
-#include "eigen-3.4.0/Eigen/Eigen"
+// #include "eigen-3.4.0/Eigen/Eigen"
+#include "Eigen/Eigen"
 #include "global.hpp"
 #include <cmath>
 

@@ -2,8 +2,11 @@
 #ifndef METEOR_PHYSICS_HPP
 #define METEOR_PHYSICS_HPP
 
-#include "eigen-3.4.0/Eigen/Eigen"
-#include "eigen-3.4.0/Eigen/src/Core/Matrix.h"
+// #include "eigen-3.4.0/Eigen/Eigen"
+// #include "eigen-3.4.0/Eigen/src/Core/Matrix.h"
+
+#include "Eigen/Eigen"
+
 #include "global.hpp"
 
 using namespace Eigen;

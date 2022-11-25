@@ -8,8 +8,31 @@ set(Dependencies_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dependencies)
 # SET_SOURCE_FILES_PROPERTIES(${CFILES} PROPERTIES LANGUAGE CXX )
 
 # eigen
+find_package(Eigen3 REQUIRED)
+if(EIGEN3_FOUND)
+	message ( STATUS "Eigen3_DIR = ${Eigen3_DIR}" )
+	message ( STATUS "EIGEN3_INCLUDE_DIR = ${EIGEN3_INCLUDE_DIR}" )
+endif()
 
+
+# OpenMP
 find_package(OpenMP)
+
+if(OPENMP_FOUND)
+	message("OPENMP FOUND")
+	message ( STATUS "OpenMP_VERSION = ${OpenMP_VERSION}" )
+	message ( STATUS "OpenMP_FOUND    = ${OpenMP_FOUND}" )
+	message ( STATUS "OpenMP_CXX_FOUND  = ${OpenMP_CXX_FOUND}" )
+	message ( STATUS "OpenMP_CXX_FLAGS  = ${OpenMP_CXX_FLAGS}" )
+	message ( STATUS "OpenMP_CXX_INCLUDE_DIRS  = ${OpenMP_CXX_INCLUDE_DIRS}" )
+	message ( STATUS "OpenMP_CXX_LIB_NAMES  = ${OpenMP_CXX_LIB_NAMES}" )
+	message ( STATUS "OpenMP_CXX_LIBRARIES  = ${OpenMP_CXX_LIBRARIES}" )
+	message ( STATUS "OpenMP_LIBRARY  = ${OpenMP_LIBRARY}" )
+	message ( STATUS "OpenMP_CXX_SPEC_DATE  = ${OpenMP_CXX_SPEC_DATE}" )
+	message ( STATUS "OpenMP_CXX_VERSION_MAJOR  = ${OpenMP_CXX_VERSION_MAJOR}" )
+	message ( STATUS "OpenMP_CXX_VERSION_MINOR  = ${OpenMP_CXX_VERSION_MINOR}" )
+	message ( STATUS "OpenMP_CXX_VERSION  = ${OpenMP_CXX_VERSION}" )
+endif()
 
 # 设置exe输出目录
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_SOURCE_DIR}/bin)
@@ -48,6 +71,7 @@ target_include_directories ( ${PROJECT_NAME}
 	PRIVATE
 		${PRJ_INCLUDE_DIRS}
         ${Dependencies_DIR}
+		${EIGEN3_INCLUDE_DIRS}
 )
 
 target_compile_features ( ${PROJECT_NAME} 
@@ -61,6 +85,7 @@ target_link_libraries ( ${PROJECT_NAME}
     PRIVATE 
         ${PRJ_LIBRARIES}
 		OpenMP::OpenMP_CXX
+		Eigen3::Eigen
 		
 )
 

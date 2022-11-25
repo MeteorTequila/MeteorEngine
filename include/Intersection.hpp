@@ -2,7 +2,8 @@
 #define METEOR_INTERSECTION_H
 
 #include "Material.hpp"
-#include "eigen-3.4.0/Eigen/src/Core/Matrix.h"
+// #include "eigen-3.4.0/Eigen/src/Core/Matrix.h"
+#include "Eigen/Eigen"
 
 class Object;
 

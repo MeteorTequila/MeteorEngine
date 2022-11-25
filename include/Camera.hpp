@@ -1,5 +1,7 @@
 #pragma once
-#include "eigen-3.4.0/Eigen/Eigen"
+
+// #include "eigen-3.4.0/Eigen/Eigen"
+#include "Eigen/Eigen"
 using namespace Eigen;
 
 class Camera

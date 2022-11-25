@@ -1,6 +1,5 @@
 #include "Renderer.hpp"
 #include "FileHelper.hpp"
-#include "eigen-3.4.0/Eigen/Eigen"
 #include <thread>
 #include <mutex>
 #include <omp.h>
