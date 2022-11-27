@@ -7,14 +7,9 @@
 //定义线程互斥锁
 std::mutex mutex_ins;
 
-// 构造函数
-// Renderer::Renderer(Scene *_scene)
-// {
-//     scene = _scene;
-// }
 
 // 角度转弧度
-float Deg2Rad(float degree) { return degree * M_PI / 180; }
+float Deg2Rad(float degree) { return degree * M_PI / 180.f; }
 
 //视角变换矩阵
 Matrix4f Renderer::GetProjectionMatrix(Scene &scene)

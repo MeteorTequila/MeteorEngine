@@ -19,6 +19,7 @@ endif()
 find_package(OpenMP)
 
 if(OPENMP_FOUND)
+# https://zhuanlan.zhihu.com/p/410867938
 	message("OPENMP FOUND")
 	message ( STATUS "OpenMP_VERSION = ${OpenMP_VERSION}" )
 	message ( STATUS "OpenMP_FOUND    = ${OpenMP_FOUND}" )
@@ -32,6 +33,10 @@ if(OPENMP_FOUND)
 	message ( STATUS "OpenMP_CXX_VERSION_MAJOR  = ${OpenMP_CXX_VERSION_MAJOR}" )
 	message ( STATUS "OpenMP_CXX_VERSION_MINOR  = ${OpenMP_CXX_VERSION_MINOR}" )
 	message ( STATUS "OpenMP_CXX_VERSION  = ${OpenMP_CXX_VERSION}" )
+else()
+	# set(OpenMP_CXX_INCLUDE_DIRS "/opt/homebrew/Cellar/libomp/15.0.5/include")
+	# set(OpenMP_libomp_LIBRARY "/opt/homebrew/Cellar/libomp/15.0.5/lib/libomp.dylib")
+
 endif()
 
 # 设置exe输出目录
