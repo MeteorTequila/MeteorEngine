@@ -8,7 +8,7 @@ class Renderer
 public:
     // Scene *scene;
     std::vector<Vector3f> framebuffer;
-    int spp = 2; //每像素入射光线采样数量，sample per pixel
+    int spp = 64; //每像素入射光线采样数量，sample per pixel
 
     Renderer(const int &_spp) : spp(_spp){};
     ~Renderer() {}

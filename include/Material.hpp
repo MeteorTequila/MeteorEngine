@@ -14,21 +14,21 @@ using namespace Shader::NormalDistributionShader;
 
 enum MaterialType
 {
-  DIFFUSAL,    //漫反射
-  MIRROR,      //镜面
-  TRANSPARENT, //透明
-  TRANSLUCENT, //半透明
+  DIFFUSAL,    // 漫反射
+  MIRROR,      // 镜面
+  TRANSPARENT, // 透明
+  TRANSLUCENT, // 半透明
   MICROFACET,
 
-  GYPSUM,    //石膏
-  GLASS,     //玻璃
-  CRYSTAL,   //水晶
-  VISCOUS,   //粘稠的
-  IRREGULAR, //不规则的
+  GYPSUM,    // 石膏
+  GLASS,     // 玻璃
+  CRYSTAL,   // 水晶
+  VISCOUS,   // 粘稠的
+  IRREGULAR, // 不规则的
 
-  METAL,         //金属
-  DIELECTRIC,    //电介质（绝缘体）
-  SEMICONDUCTOR, //半导体
+  METAL,         // 金属
+  DIELECTRIC,    // 电介质（绝缘体）
+  SEMICONDUCTOR, // 半导体
 };
 
 // 材料的折射率（IoR），介质的折射率是永远大于1的常数，如空气n=1.0003
@@ -39,27 +39,27 @@ class Material
 {
 
 public:
-  float IOR;            //折射率(Index Of Refraction)=c/v(其中 c 为真空下的光速，v
-                        //为光在该介质中的传播速度，该折射率也称为绝对折射率)
-  float reflectivity;   //反射率
-  float transmissivity; //透射率
-  float absorptivity;   //吸收率
+  float IOR;            // 折射率(Index Of Refraction)=c/v(其中 c 为真空下的光速，v
+                        // 为光在该介质中的传播速度，该折射率也称为绝对折射率)
+  float reflectivity;   // 反射率
+  float transmissivity; // 透射率
+  float absorptivity;   // 吸收率
 
-  Vector3f kd; //漫反射率（对每个rgb颜色的漫反射率）
-  Vector3f ks; //镜面反射率（对每个rgb色的镜面反射率）
+  Vector3f kd; // 漫反射率（对每个rgb颜色的漫反射率）
+  Vector3f ks; // 镜面反射率（对每个rgb色的镜面反射率）
 
-  int exp;           //镜面指数
-  MaterialType mt;   //材质类型
-  Vector3f emission; //材质自发光
+  int exp;           // 镜面指数
+  MaterialType mt;   // 材质类型
+  Vector3f emission; // 材质自发光
 
   // 微表面属性
-  Vector3f baseColor;     //在100%强度直射下，呈现的颜色
-  Vector3f specularColor; //在100%强度直射下，高光颜色
-  bool subsurface;        //次表面
-  float metallic;         //金属度
-  float alpha_phong;      //光泽度
-  float roughness;        //粗糙度
-  float anisotropic;      //各向异性程度。用于控制镜面反射高光的纵横比
+  Vector3f baseColor;     // 在100%强度直射下，呈现的颜色
+  Vector3f specularColor; // 在100%强度直射下，高光颜色
+  bool subsurface;        // 次表面
+  float metallic;         // 金属度
+  float alpha_phong;      // 光泽度
+  float roughness;        // 粗糙度
+  float anisotropic;      // 各向异性程度。用于控制镜面反射高光的纵横比
 
   Material();
   Material(MaterialType _mt);

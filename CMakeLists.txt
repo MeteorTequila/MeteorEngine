@@ -50,6 +50,8 @@ set(CMAKE_VERBOSE_MAKEFILE on )
 # mac 使用-fopenmp会报错，添加-Xpreprocessor参数后，可以使用
 # https://stackoverflow.com/questions/58275167/mac-running-openmp-clang-error-unsupported-option-fopenmp
 set(CMAKE_CXX_FLAGS "${CAMKE_CXX_FLAGS} -Wall -O3 -Xpreprocessor -fopenmp")
+# set(CMAKE_CXX_FLAGS "${CAMKE_CXX_FLAGS} -Wall  -Xpreprocessor -fopenmp")
+
 
 set(CMAKE_LINK_LIBRARY_FLAG "${CMAKE_LINK_LIBRARY_FLAG} ")
 

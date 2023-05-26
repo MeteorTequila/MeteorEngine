@@ -28,7 +28,7 @@ Material::Material(MaterialType _mt)
     case DIFFUSAL:
     {
         this->emission = {0, 0, 0};
-        this->IOR = 1.51f; //硅酸盐折射率
+        this->IOR = 1.51f; // 硅酸盐折射率
         this->reflectivity = 0.8;
         this->transmissivity = 0;
         this->kd = {0.725f, 0.71f, 0.68f};
@@ -44,7 +44,7 @@ Material::Material(MaterialType _mt)
     case MIRROR:
     {
         this->emission = {0, 0, 0};
-        this->IOR = 1.33f; //银的折射率
+        this->IOR = 1.33f; // 银的折射率
         this->reflectivity = 0.8;
         this->transmissivity = 0;
         this->kd = {0.2f, 0.4f, 0.8f};
@@ -68,14 +68,14 @@ Material::Material(MaterialType _mt)
         this->ks = {0.3f, 0.5f, 0.9f};
         this->exp = 10;
 
-        this->baseColor = {0.2f, 0.4f, 0.8f};
-        this->roughness = 0.35;
+        this->baseColor = {0.3f, 0.3f, 0.25f};
+        this->roughness = 0.4f;
         break;
     }
     case TRANSPARENT:
     {
         this->emission = {0, 0, 0};
-        this->IOR = 2.42; //钻石的折射率
+        this->IOR = 2.42; // 钻石的折射率
         this->reflectivity = 0.8;
         this->transmissivity = 0;
         this->kd = {0.2f, 0.4f, 0.8f};
@@ -143,34 +143,49 @@ Vector3f Material::GetEmission() const
  */
 Vector3f Material::GetRandomReflect(const Vector3f &wi, const Vector3f &N)
 {
-    // 不同的随机办法
-    int sample_flag = 0;
-
-    if (sample_flag == 0)
-    { // games101 作业7的的采样方法
-        float x_1 = get_random_float(), x_2 = get_random_float();
-        float z = std::fabs(1.0f - 2.0f * x_1);
-        float r = std::sqrt(1.0f - z * z), phi = 2 * M_PI * x_2;
-        Vector3f localRay(r * std::cos(phi), r * std::sin(phi), z);
-        return Physics::MathMethods::SphereToWorld(localRay, N).normalized();
-    }
-
-    if (sample_flag == 1)
+    switch (this->mt)
     {
-        //随机[0,1]取值
-        float r_1 = get_random_float(), r_2 = get_random_float();
-
-        //随机设置球坐标系的theta和phi
-        float phi = 0.5 * M_PI * r_1;
-        float theta = 2 * M_PI * r_2;
-        float r = 1.f;
-
-        //得到球面坐标
-        Vector3f sphereCoord(r * cos(phi) * cos(theta), r * cos(phi) * sin(theta), r * sin(phi));
-
-        //转换成世界坐标
-        return Physics::MathMethods::SphereToWorld(sphereCoord, N).normalized();
+    case MIRROR:
+    {
+        Vector3f loacalRay = Physics::Optics::GetReflect(wi, N).normalized();
+        return loacalRay;
+        break;
     }
+    default:
+    {
+        // 不同的随机办法
+        int sample_flag = 0;
+
+        if (sample_flag == 0)
+        { // games101 作业7的的采样方法
+            float x_1 = get_random_float(), x_2 = get_random_float();
+            float z = std::fabs(1.0f - 2.0f * x_1);
+            float r = std::sqrt(1.0f - z * z), phi = 2 * M_PI * x_2;
+            Vector3f localRay(r * std::cos(phi), r * std::sin(phi), z);
+            return Physics::MathMethods::SphereToWorld(localRay, N).normalized();
+        }
+
+        if (sample_flag == 1)
+        {
+            // 随机[0,1]取值
+            float r_1 = get_random_float(), r_2 = get_random_float();
+
+            // 随机设置球坐标系的theta和phi
+            float phi = 0.5 * M_PI * r_1;
+            float theta = 2 * M_PI * r_2;
+            float r = 1.f;
+
+            // 得到球面坐标
+            Vector3f sphereCoord(r * cos(phi) * cos(theta), r * cos(phi) * sin(theta), r * sin(phi));
+
+            // 转换成世界坐标
+            return Physics::MathMethods::SphereToWorld(sphereCoord, N).normalized();
+        }
+
+        break;
+    }
+    }
+    return Vector3f(0.f, 0.f, 0.f);
 }
 
 /**
@@ -186,8 +201,8 @@ float Material::DistributionOfNormal(const Vector3f &N, const Vector3f &h)
     // GGX分布，即Trowbridge-Reitz分布
     return ND_test(n_dot_h, roughness);
 
-    //测试用
-    // return ND_test(n_dot_h, roughness);
+    // 测试用
+    //  return ND_test(n_dot_h, roughness);
 }
 
 /**
@@ -205,7 +220,7 @@ float Material::GeometryShadow(const Vector3f &l, const Vector3f &N, const Vecto
     // UE4的GGX-Smith Correlated Joint 近似方案
     // return G_Smith_UE4(n_dot_v, n_dot_l, roughness);
 
-    //测试用
+    // 测试用
     return G_Test(n_dot_v, n_dot_l, roughness);
 }
 
@@ -285,7 +300,7 @@ std::vector<Vector3f> Material::BlingPhong(const Vector3f &wi, const Vector3f &N
     }
     Vector3f specular = std::pow(costheta_h, exp) * ks;
 
-    //总体描述
+    // 总体描述
     return {diffuse, specular};
 }
 
@@ -301,8 +316,8 @@ float Material::CookTorranceSpecular(const Vector3f &L, const Vector3f &N, const
 {
 
     Vector3f H = (L + V).normalized();
-    float ND_term = DistributionOfNormal(N, H); //法线分布
-    float G_term = GeometryShadow(L, N, V);     //几何阴影
+    float ND_term = DistributionOfNormal(N, H); // 法线分布
+    float G_term = GeometryShadow(L, N, V);     // 几何阴影
 
     // printf("D: %f, G: %f ;", ND_term, G_term);
 
@@ -310,6 +325,7 @@ float Material::CookTorranceSpecular(const Vector3f &L, const Vector3f &N, const
 
     return ND_term * G_term / std::max(denom, EPSILON);
 }
+
 // TODO 对于入射该材质的每道-wo，得到其入射的概率为
 float Material::GetBrdfSample(const Vector3f &V, const Vector3f &N, const Vector3f &L)
 {
@@ -361,12 +377,14 @@ float Material::GetBrdfSample(const Vector3f &V, const Vector3f &N, const Vector
  */
 Vector3f Material::EnergyEval(const Vector3f &wi, const Vector3f &N, const Vector3f &wo)
 {
-    if (wo.dot(N) > 0.f)
+    float cosAlpha = wo.dot(N);
+    if (cosAlpha > 0.f)
     {
         switch (this->mt)
         {
         case DIFFUSAL:
         {
+
             // lambert项损耗，传播距离损耗（CastRay计算），俄罗斯轮盘概率损耗，球面采样概率损耗
             return this->baseColor * Lambert(-wo, N) / M_PI;
         }
@@ -375,8 +393,10 @@ Vector3f Material::EnergyEval(const Vector3f &wi, const Vector3f &N, const Vecto
         {
             // 这里的除pi到底是为什么？？？？？？？
             // 因为偏导数 https://zhuanlan.zhihu.com/p/342807202
-            return Vector3f(1.f, 1.f, 1.f) * Physics::Optics::Fresnel(-wo, N, this->IOR) * Lambert(-wo, N) / M_PI;
-            break;
+            if (cosAlpha < 0.001)
+                return Vector3f(0.f, 0.f, 0.f);
+            else
+                return Vector3f(1.f, 1.f, 1.f) * Physics::Optics::Fresnel(-wo, N, this->IOR) / cosAlpha;
         }
 
         case MICROFACET:

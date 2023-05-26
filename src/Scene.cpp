@@ -1,4 +1,5 @@
 #include "Scene.hpp"
+
 #include "Acceleration.hpp"
 #include "global.hpp"
 
@@ -26,10 +27,7 @@ void Scene::PreProcessing()
 }
 
 // 向场景中添加对象
-void Scene::add(Object *object)
-{
-  objects.push_back(object);
-}
+void Scene::add(Object *object) { objects.push_back(object); }
 
 /**
  * @brief 判断射线是否与场景中的物体有相交
@@ -53,20 +51,20 @@ void Scene::GetEmissionSample(Intersection &pos, float &pdf) const
 {
   float sumEmitArea = 0;
 
-  //遍历场景中的所有Triangle片元，判断Material是否能发光
+  // 遍历场景中的所有Triangle片元，判断Material是否能发光
   for (uint32_t k = 0; k < objects.size(); ++k)
   {
-    //如果能够发光，累加所有发光material的面积
+    // 如果能够发光，累加所有发光material的面积
     if (objects[k]->HasEmission())
     {
       sumEmitArea += objects[k]->GetArea();
     }
   }
-  //随机取[0,emit_area_sum]之间的一个数p
+  // 随机取[0,emit_area_sum]之间的一个数p
   float p = get_random_float() * sumEmitArea;
   sumEmitArea = 0;
 
-  //开始对场景中的发光体进行第二次遍历，只要第二次遍历中的sumEmitArea>p就对当前发光区域采样
+  // 开始对场景中的发光体进行第二次遍历，只要第二次遍历中的sumEmitArea>p就对当前发光区域采样
   for (uint32_t k = 0; k < objects.size(); ++k)
   {
     if (objects[k]->HasEmission())
@@ -74,7 +72,7 @@ void Scene::GetEmissionSample(Intersection &pos, float &pdf) const
       sumEmitArea += objects[k]->GetArea();
       if (p <= sumEmitArea)
       {
-        //对第当前object采样
+        // 对第当前object采样
         objects[k]->GetSample(pos, pdf);
 
         break;
@@ -86,18 +84,18 @@ void Scene::GetEmissionSample(Intersection &pos, float &pdf) const
 /**
  * @brief 全局光照(Global Ilumination)
  * 路径追踪，在场景中递归的发射光线一道光线由摄像机发射往像素，之后自动递归的向场景中其他方向发射光线
+ * 参考 https://blog.csdn.net/ycrsw/article/details/124408789
+ * https://blog.csdn.net/Xuuuuuuuuuuu/article/details/129001805
  * @param ray EyeRay或者ReflectRay或者RefractRay
  * @return Vector3f
  */
 Vector3f Scene::CastRay(const Ray &ray) const
 {
-
   // 总共发射次1024*1024*（2+2+2+2）*2=9834496直接光照
   Vector3f l_dir(0.f, 0.f, 0.f);
   Vector3f l_indir(0.f, 0.f, 0.f);
 
   // 从摄像机角度发射EyeRay，与场景中的物体求交，判断是否能够看到场景中的物体
-
   Intersection inter = GetIntersection(ray);
 
   // 如果没发生相交，返回空
@@ -117,72 +115,113 @@ Vector3f Scene::CastRay(const Ray &ray) const
     return inter.m->GetEmission() / LAMBDA;
   }
 
-  /**
-   * ----------------------------------------------------------------------------------------------------------------
-   * ------------------------------------- 直接光照（光源是否能够直接照射到物体）-------------------------------------------
-   * ----------------------------------------------------------------------------------------------------------------
-   */
-
-  // 获取场景中的采样后的发光区域的坐标和概率,得到采样光源的位置和强度（方便直接对光源方向采样）
-  // 为了提高直接光照的采样效率，直接朝场景内所有的发光体均匀采样
-  Intersection emissionSample;
-  float emissionSamplePdf;
-  GetEmissionSample(emissionSample, emissionSamplePdf);
-  Vector3f lightPositon = emissionSample.coords;
-  Vector3f lightIntensity = emissionSample.m->GetEmission();
-
-  // 产生EyeRay交点->样本光源的射线，并且获取相交事件
-  Vector3f dir_obj_to_sample = (lightPositon - inter.coords).normalized();
-  Ray ray_obj_to_sample(inter.coords, dir_obj_to_sample);
-  Intersection inter_dir = GetIntersection(ray_obj_to_sample);
-
-  // 如果ray_obj_to_sample停下时，行进距离与两点直线距离不相等，则认为光线无法照到这个区域
-  float epsilon_dist = inter_dir.distance - (lightPositon - inter.coords).norm();
-  if (epsilon_dist > -EPSILON)
+  switch (inter.m->mt)
   {
-    // 计算从光源出发到我们眼睛的这一束光反射过来的颜色（光源->交点，交点->反射）
-
-    float sample_emit_costheta = -dir_obj_to_sample.dot(emissionSample.normal);                           // 采样光源在theta方向上释放的能量
-    float decay_dir_dist_2 = (lightPositon - inter.coords).norm() * (lightPositon - inter.coords).norm(); // 距离衰减
-    float decay_dir_sum = sample_emit_costheta / decay_dir_dist_2 / emissionSamplePdf;                    // 采样光源传播总损耗
-    // FIXME 为什么是 除emissionSamplePdf？
-
-    l_dir = decay_dir_sum * (lightIntensity.cwiseProduct(inter.m->EnergyEval(ray.direction, inter.normal, dir_obj_to_sample)));
-  }
-
-  /**
-   * ----------------------------------------------------------------------------------------------------------------
-   * ------------------------------------- 间接光照（光源是否能够间接照射到物体）-------------------------------------------
-   * ----------------------------------------------------------------------------------------------------------------
-   */
-
-  // 使用概率的方法使蒙特卡洛方法的递归迭代收敛，最终结果满足数学期望
-  if (get_random_float() > XI)
+  case MIRROR:
   {
-    return l_dir;
-  }
-
-  // EyeRay产生随机方向的反射光线，并且获取相交事件
-  Vector3f dir_random_reflect = inter.m->GetRandomReflect(ray.direction, inter.normal);
-  Ray ray_random_reflect(inter.coords, dir_random_reflect);
-  Intersection inter_indir = GetIntersection(ray_random_reflect);
-
-  // 如果反射光线的并未与场景中的物体发生相交，或者相交的是光源，返回直接光照
-  if (inter_indir.IsHappend && !inter_indir.m->HasEmission())
-  {
-    // BRDF入射概率
-    float reflectPdf = inter.m->GetBrdfSample(ray.direction, inter.normal, dir_random_reflect);
-
-    //当pdf过于接近0时，会产生除0问题，造成数值过大，产生白色噪点，
-    if (reflectPdf > EPSILON)
+    if (get_random_float() < XI)
     {
-      float decay_indir_sum = 1 / reflectPdf / XI; // 间接光照传播总损耗
-
-      // 在第一碰撞点产生的反射会有能量损耗
-      l_indir = decay_indir_sum * CastRay(ray_random_reflect).cwiseProduct(inter.m->EnergyEval(ray.direction, inter.normal, dir_random_reflect));
-      // printf("[%f,%f,%f];\n", l_indir.x(), l_indir.y(), l_indir.z());
+      return l_dir;
     }
+
+    // EyeRay产生随机方向的反射光线，并且获取相交事件
+    Vector3f dir_random_reflect = inter.m->GetRandomReflect(ray.direction, inter.normal);
+    Ray ray_random_reflect(inter.coords, dir_random_reflect);
+    Intersection inter_indir = GetIntersection(ray_random_reflect);
+
+    // 如果反射光线的并未与场景中的物体发生相交，或者相交的是光源，返回直接光照
+    if (inter_indir.IsHappend && !inter_indir.m->HasEmission())
+    {
+      // BRDF入射概率
+      float reflectPdf = inter.m->GetBrdfSample(ray.direction, inter.normal, dir_random_reflect);
+
+      // 当pdf过于接近0时，会产生除0问题，造成数值过大，产生白色噪点，
+      if (reflectPdf > EPSILON)
+      {
+        float decay_indir_sum = 1 / reflectPdf / XI; // 间接光照传播总损耗
+
+        // 在第一碰撞点产生的反射会有能量损耗
+        l_indir = decay_indir_sum * CastRay(ray_random_reflect).cwiseProduct(inter.m->EnergyEval(ray.direction, inter.normal, dir_random_reflect));
+        // printf("[%f,%f,%f];\n", l_indir.x(), l_indir.y(), l_indir.z());
+      }
+    }
+
+    break;
+  }
+  default:
+  {
+    /**
+     * ----------------------------------------------------------------------------------------------------------------
+     * -------------------------------------
+     * 直接光照（光源是否能够直接照射到物体）-------------------------------------------
+     * ----------------------------------------------------------------------------------------------------------------
+     */
+
+    // 获取场景中的采样后的发光区域的坐标和概率,得到采样光源的位置和强度（方便直接对光源方向采样）
+    // 为了提高直接光照的采样效率，直接朝场景内所有的发光体均匀采样
+    Intersection emissionSample;
+    float emissionSamplePdf;
+    GetEmissionSample(emissionSample, emissionSamplePdf);
+    Vector3f lightPositon = emissionSample.coords;
+    Vector3f lightIntensity = emissionSample.m->GetEmission();
+
+    // 产生EyeRay交点->样本光源的射线，并且获取相交事件
+    Vector3f dir_obj_to_sample = (lightPositon - inter.coords).normalized();
+    Ray ray_obj_to_sample(inter.coords, dir_obj_to_sample);
+    Intersection inter_dir = GetIntersection(ray_obj_to_sample);
+
+    // 如果ray_obj_to_sample停下时，行进距离与两点直线距离不相等，则认为光线无法照到这个区域
+    float epsilon_dist = inter_dir.distance - (lightPositon - inter.coords).norm();
+    if (epsilon_dist > -EPSILON)
+    {
+      // 计算从光源出发到我们眼睛的这一束光反射过来的颜色（光源->交点，交点->反射）
+
+      float sample_emit_costheta = -dir_obj_to_sample.dot(emissionSample.normal);                           // 采样光源在theta方向上释放的能量
+      float decay_dir_dist_2 = (lightPositon - inter.coords).norm() * (lightPositon - inter.coords).norm(); // 距离衰减
+      float decay_dir_sum = sample_emit_costheta / decay_dir_dist_2 / emissionSamplePdf;                    // 采样光源传播总损耗
+
+      // FIXME 为什么是 除emissionSamplePdf？
+      l_dir = decay_dir_sum * (lightIntensity.cwiseProduct(inter.m->EnergyEval(ray.direction, inter.normal, dir_obj_to_sample)));
+    }
+
+    /**
+     * ----------------------------------------------------------------------------------------------------------------
+     * -------------------------------------
+     * 间接光照（光源是否能够间接照射到物体）-------------------------------------------
+     * ----------------------------------------------------------------------------------------------------------------
+     */
+
+    // 使用概率的方法使蒙特卡洛方法的递归迭代收敛，最终结果满足数学期望
+    if (get_random_float() > XI)
+    {
+      return l_dir;
+    }
+
+    // EyeRay产生随机方向的反射光线，并且获取相交事件
+    Vector3f dir_random_reflect = inter.m->GetRandomReflect(ray.direction, inter.normal);
+    Ray ray_random_reflect(inter.coords, dir_random_reflect);
+    Intersection inter_indir = GetIntersection(ray_random_reflect);
+
+    // 如果反射光线的并未与场景中的物体发生相交，或者相交的是光源，返回直接光照
+    if (inter_indir.IsHappend && !inter_indir.m->HasEmission())
+    {
+      // BRDF入射概率
+      float reflectPdf = inter.m->GetBrdfSample(ray.direction, inter.normal, dir_random_reflect);
+
+      // 当pdf过于接近0时，会产生除0问题，造成数值过大，产生白色噪点，
+      if (reflectPdf > EPSILON)
+      {
+        float decay_indir_sum = 1 / reflectPdf / XI; // 间接光照传播总损耗
+
+        // 在第一碰撞点产生的反射会有能量损耗
+        l_indir = decay_indir_sum * CastRay(ray_random_reflect).cwiseProduct(inter.m->EnergyEval(ray.direction, inter.normal, dir_random_reflect));
+        // printf("[%f,%f,%f];\n", l_indir.x(), l_indir.y(), l_indir.z());
+      }
+    }
+
+    break;
+  }
   }
 
-  return l_dir + l_indir;
+  return (l_dir + l_indir);
 }
